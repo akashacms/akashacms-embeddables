@@ -1,0 +1,20 @@
+{
+  "author": {
+    "name": "David Herron",
+    "email": "david@davidherron.com",
+    "url": "http://nodejs.davidherron.com"
+  },
+  "name": "akashacms-embeddables",
+  "description": "A plugin for AkashaCMS that supports embedding documents in pages",
+  "homepage": "https://github.com/robogeek/akashacms-embeddables",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/robogeek/akashacms-embeddables.git"
+  },
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=0.10.1"
+  },
+  "dependencies": {
+  }
+}
