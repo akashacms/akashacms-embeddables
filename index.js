@@ -44,6 +44,13 @@ module.exports.config = function(akasha, config) {
         if (callback) callback(undefined, val);
         return val;
     };
+    config.funcs.youtubePlayer = function(arg, callback) {
+        if (!callback)       { callback(new Error("No callback given")); }
+        if (!arg.youtubeUrl) { callback(new Error("No youtubeUrl given")); }
+        if (!arg.template)   { arg.template = "youtube-embed.html.ejs"; }
+        arg.url = arg.youtubeUrl;
+        akasha.oembedRender(arg, callback);
+    }
 }
 
 var generateGoogleDocViewerUrl = function(documentUrl) {
