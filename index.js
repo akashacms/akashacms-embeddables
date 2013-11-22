@@ -36,16 +36,22 @@ module.exports.config = function(akasha, config) {
     };
     config.funcs.googleDocsViewLink = function(arg, callback) {
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
-        if (!arg.anchorText)   { arg.anchorText = "View"; }
+        if (!arg.anchorText)   {
+            if (arg.documentAnchorText) {
+                arg.anchorText = arg.documentAnchorText
+            } else {
+                arg.anchorText = "View";
+            }
+        }
         var val = akasha.partialSync(config, "google-doc-viewer-link.html.ejs", {
             docViewerUrl: generateGoogleDocViewerUrl(arg.documentUrl),
-            documentAnchorText: arg.anchorText
+            anchorText: arg.anchorText
         });
         if (callback) callback(undefined, val);
         return val;
     };
     config.funcs.youtubePlayer = function(arg, callback) {
-        if (!callback)       { callback(new Error("No callback given")); }
+        if (!callback)       { throw new Error("No callback given"); }
         if (!arg.youtubeUrl) { callback(new Error("No youtubeUrl given")); }
         if (!arg.template)   { arg.template = "youtube-embed.html.ejs"; }
         arg.url = arg.youtubeUrl;
