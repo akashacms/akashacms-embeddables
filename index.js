@@ -26,6 +26,15 @@ var url      = require('url');
  **/
 module.exports.config = function(akasha, config) {
     config.root_partials.push(path.join(__dirname, 'partials'));
+    config.root_assets.unshift(path.join(__dirname, 'assets'));
+    config.funcs.viewerJS = function(arg, callback) {
+        if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
+        var val = akasha.partialSync(config, "viewerjs-viewer.html.ejs", {
+            docViewerUrl: "/vendor/Viewer.js/#" + arg.documentUrl
+        });
+        if (callback) callback(undefined, val);
+        return val;
+    }
     config.funcs.googleDocsViewer = function(arg, callback) {
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
         var val = akasha.partialSync(config, "google-doc-viewer.html.ejs", {
