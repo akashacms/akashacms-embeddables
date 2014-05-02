@@ -61,8 +61,10 @@ module.exports.config = function(akasha, config) {
     config.funcs.viewerJSLink = function(arg, callback) {
         if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
         if (!arg.template)   { arg.template = "viewerjs-link.html.ejs"; }
+        if (!arg.anchorText) { arg.anchorText = "Click here"; }
         var val = akasha.partialSync(config, arg.template, {
-            docUrl: generateViewerJSURL(arg.docUrl)
+            docUrl: generateViewerJSURL(arg.docUrl),
+            anchorText: arg.anchorText
         });
         return val;
     }
