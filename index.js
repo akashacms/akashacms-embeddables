@@ -26,6 +26,7 @@ var url      = require('url');
  **/
 module.exports.config = function(akasha, config) {
     config.root_partials.push(path.join(__dirname, 'partials'));
+    config.root_assets.unshift(path.join(__dirname, 'assets'));
     config.funcs.googleDocsViewer = function(arg, callback) {
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
         var val = akasha.partialSync(config, "google-doc-viewer.html.ejs", {
@@ -57,6 +58,26 @@ module.exports.config = function(akasha, config) {
         arg.url = arg.youtubeUrl;
         akasha.oembedRender(arg, callback);
     }
+    config.funcs.viewerJSLink = function(arg, callback) {
+        if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
+        if (!arg.template)   { arg.template = "viewerjs-link.html.ejs"; }
+        var val = akasha.partialSync(config, arg.template, {
+            docUrl: generateViewerJSURL(arg.docUrl)
+        });
+        return val;
+    }
+    config.funcs.viewerJSViewer = function(arg, callback) {
+        if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
+        if (!arg.template)   { arg.template = "viewerjs-embed.html.ejs"; }
+        if (!arg.width)      { arg.width = "100%"; }
+        if (!arg.height)     { arg.height = "900px"; }
+        var val = akasha.partialSync(config, arg.template, {
+            docUrl: generateViewerJSURL(arg.docUrl),
+            width: arg.width,
+            height: arg.height
+        });
+        return val;
+    }
 }
 
 var generateGoogleDocViewerUrl = function(documentUrl) {
@@ -68,4 +89,14 @@ var generateGoogleDocViewerUrl = function(documentUrl) {
             url: documentUrl, embedded: true
         }
     });
+}
+
+var generateViewerJSURL = function(docUrl) {
+    if (docUrl.indexOf('http://') === 0 || docUrl.indexOf('https://') === 0) {
+        return docUrl;
+    } else if (docUrl.indexOf('/') === 0) {
+        return "../../.."+ docUrl;
+    } else {
+        return "../../../"+ docUrl;
+    }
 }
