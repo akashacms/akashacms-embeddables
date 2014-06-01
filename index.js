@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2013 David Herron
+ * Copyright 2013-2014 David Herron
  * 
  * This file is part of AkashaCMS-embeddables (http://akashacms.com/).
  *
@@ -20,6 +20,7 @@
 var path     = require('path');
 var util     = require('util');
 var url      = require('url');
+var async    = require('async');
 
 /**
  * Add ourselves to the config data.
@@ -27,6 +28,106 @@ var url      = require('url');
 module.exports.config = function(akasha, config) {
     config.root_partials.push(path.join(__dirname, 'partials'));
     config.root_assets.unshift(path.join(__dirname, 'assets'));
+    
+    if (config.mahabhuta) {
+        config.mahabhuta.push(function(config, $, metadata, done) {
+            // <youtube-video href=".."/>  TBD: autoplay, thumbnail+lightbox
+            var elemsYT = [];
+            $('youtube-video').each(function(i, elem) { elemsYT[i] = elem; });
+            // util.log(util.inspect(elemsYT));
+            async.forEachSeries(elemsYT, function(elemYT, cb) {
+                // util.log(util.inspect(elemYT));
+                akasha.oembedRender({
+                    template: "youtube-embed.html.ejs",
+                    url: $(elemYT).attr("href")
+                }, function(err, html) {
+                    if (err) cb(err);
+                    else { 
+                        $(elemYT).replaceWith(html);
+                        cb();
+                    }
+                });
+            }, function(err) {
+                done(err);
+            });
+        });
+        config.mahabhuta.push(function(config, $, metadata, done) {
+            // <oembed href="..." optional: template="..."/>
+            var elemsOE = [];
+            $('oembed').each(function(i, elem) { elemsOE[i] = elem; });
+            // util.log(util.inspect(elemsOE));
+            async.forEachSeries(elemsOE, function(elemOE, cb) {
+                // util.log(util.inspect(elemOE));
+                akasha.oembedRender({
+                    template: $(elemOE).attr('template'),
+                    url: $(elemOE).attr("href")
+                }, function(err, html) {
+                    if (err) cb(err);
+                    else { 
+                        $(elemOE).replaceWith(html);
+                        cb();
+                    }
+                });
+            }, function(err) {
+                done(err);
+            });
+        });
+        config.mahabhuta.push(function(config, $, metadata, done) {
+            var href, width, height;
+            // <googledocs-viewer href="..." />
+            $('googledocs-viewer').each(function(i, elem) {
+                href = $(this).attr("href");
+                if (!href) return done(new Error("URL required for googledocs-viewer"));
+                $(this).replaceWith(
+                    akasha.partialSync(config, "google-doc-viewer.html.ejs", {
+                        docViewerUrl: generateGoogleDocViewerUrl(href)
+                    })
+                );
+            });
+            // <googledocs-view-link href="..." >Anchor Text</googledocs-view-link>
+            $('googledocs-view-link').each(function(i, elem) {
+                href = $(this).attr("href");
+                if (!href) return done(new Error("URL required for googledocs-view-link"));
+                var anchorText = $(this).text();
+                if (!anchorText) anchorText = "Click Here";
+                $(this).replaceWith(
+                    akasha.partialSync(config, "google-doc-viewer-link.html.ejs", {
+                        docViewerUrl: generateGoogleDocViewerUrl(href),
+                        anchorText: anchorText
+                    })
+                );
+            });
+            // <docviewer href="..." width="..." height="..."/>
+            $('docviewer').each(function(i, elem) {
+                href = $(this).attr("href");
+                if (!href) return done(new Error("URL required for docviewer"));
+                width = $(this).attr("width");
+                if (!width) width = "100%";
+                height = $(this).attr("height");
+                if (!height) height = "900px";
+                $(this).replaceWith(
+                    akasha.partialSync(config, "viewerjs-embed.html.ejs", {
+                        docUrl: generateViewerJSURL(href),
+                        width: width, height: height
+                    })
+                );
+            });
+            // <docviewer-link href="..." >Anchor Text</docviewer-link>
+            $('docviewer-link').each(function(i, elem) {
+                href = $(this).attr("href");
+                if (!href) return done(new Error("URL required for docviewer"));
+                var anchorText = $(this).text();
+                if (!anchorText) anchorText = "Click Here";
+                $(this).replaceWith(
+                    akasha.partialSync(config, "viewerjs-link.html.ejs", {
+                        docUrl: generateViewerJSURL(arg.docUrl),
+                        anchorText: anchorText
+                    })
+                );
+            });
+            done();
+        });
+    }
     config.funcs.googleDocsViewer = function(arg, callback) {
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
         var val = akasha.partialSync(config, "google-doc-viewer.html.ejs", {
@@ -39,7 +140,7 @@ module.exports.config = function(akasha, config) {
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
         if (!arg.anchorText)   {
             if (arg.documentAnchorText) {
-                arg.anchorText = arg.documentAnchorText
+                arg.anchorText = arg.documentAnchorText;
             } else {
                 arg.anchorText = "View";
             }
@@ -57,7 +158,7 @@ module.exports.config = function(akasha, config) {
         if (!arg.template)   { arg.template = "youtube-embed.html.ejs"; }
         arg.url = arg.youtubeUrl;
         akasha.oembedRender(arg, callback);
-    }
+    };
     config.funcs.viewerJSLink = function(arg, callback) {
         if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
         if (!arg.template)   { arg.template = "viewerjs-link.html.ejs"; }
@@ -67,7 +168,7 @@ module.exports.config = function(akasha, config) {
             anchorText: arg.anchorText
         });
         return val;
-    }
+    };
     config.funcs.viewerJSViewer = function(arg, callback) {
         if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
         if (!arg.template)   { arg.template = "viewerjs-embed.html.ejs"; }
@@ -79,8 +180,8 @@ module.exports.config = function(akasha, config) {
             height: arg.height
         });
         return val;
-    }
-}
+    };
+};
 
 var generateGoogleDocViewerUrl = function(documentUrl) {
     return url.format({
