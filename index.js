@@ -77,8 +77,8 @@ module.exports.config = function(akasha, config) {
             // <googledocs-viewer href="..." />
             $('googledocs-viewer').each(function(i, elem) {
                 href = $(this).attr("href");
-                if (!href) return done(new Error("URL required for googledocs-viewer"));
-                $(this).replaceWith(
+                if (!href) done(new Error("URL required for googledocs-viewer"));
+                else $(this).replaceWith(
                     akasha.partialSync(config, "google-doc-viewer.html.ejs", {
                         docViewerUrl: generateGoogleDocViewerUrl(href)
                     })
@@ -90,7 +90,7 @@ module.exports.config = function(akasha, config) {
                 if (!href) return done(new Error("URL required for googledocs-view-link"));
                 var anchorText = $(this).text();
                 if (!anchorText) anchorText = "Click Here";
-                $(this).replaceWith(
+                return $(this).replaceWith(
                     akasha.partialSync(config, "google-doc-viewer-link.html.ejs", {
                         docViewerUrl: generateGoogleDocViewerUrl(href),
                         anchorText: anchorText
@@ -105,7 +105,7 @@ module.exports.config = function(akasha, config) {
                 if (!width) width = "100%";
                 height = $(this).attr("height");
                 if (!height) height = "900px";
-                $(this).replaceWith(
+                return $(this).replaceWith(
                     akasha.partialSync(config, "viewerjs-embed.html.ejs", {
                         docUrl: generateViewerJSURL(href),
                         width: width, height: height
@@ -118,7 +118,7 @@ module.exports.config = function(akasha, config) {
                 if (!href) return done(new Error("URL required for docviewer"));
                 var anchorText = $(this).text();
                 if (!anchorText) anchorText = "Click Here";
-                $(this).replaceWith(
+                return $(this).replaceWith(
                     akasha.partialSync(config, "viewerjs-link.html.ejs", {
                         docUrl: generateViewerJSURL(arg.docUrl),
                         anchorText: anchorText
