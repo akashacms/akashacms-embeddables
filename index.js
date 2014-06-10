@@ -30,7 +30,7 @@ module.exports.config = function(akasha, config) {
     config.root_assets.unshift(path.join(__dirname, 'assets'));
     
     if (config.mahabhuta) {
-        config.mahabhuta.push(function(config, $, metadata, done) {
+        config.mahabhuta.push(function(akasha, config, $, metadata, done) {
             // <youtube-video href=".."/>  TBD: autoplay, thumbnail+lightbox
             var elemsYT = [];
             $('youtube-video').each(function(i, elem) { elemsYT[i] = elem; });
@@ -51,7 +51,7 @@ module.exports.config = function(akasha, config) {
                 done(err);
             });
         });
-        config.mahabhuta.push(function(config, $, metadata, done) {
+        config.mahabhuta.push(function(akasha, config, $, metadata, done) {
             // <oembed href="..." optional: template="..."/>
             var elemsOE = [];
             $('oembed').each(function(i, elem) { elemsOE[i] = elem; });
@@ -72,7 +72,7 @@ module.exports.config = function(akasha, config) {
                 done(err);
             });
         });
-        config.mahabhuta.push(function(config, $, metadata, done) {
+        config.mahabhuta.push(function(akasha, config, $, metadata, done) {
             var href, width, height;
             // <googledocs-viewer href="..." />
             $('googledocs-viewer').each(function(i, elem) {
