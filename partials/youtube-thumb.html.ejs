@@ -1,0 +1,18 @@
+<img <%
+    if (imgclass) {
+        %>class="<%= imgclass %>" <%
+    }
+    
+    if (imgwidth) {
+        %>width="<%= imgwidth %>" <%
+    }
+    
+    if (imgalign) {
+        %>align="<%= imgalign %>" <%
+    }
+    
+    if (style) {
+        %>style="<%= style %>" <%
+    }
+    
+    %> src="<%= imgurl %>"/>
