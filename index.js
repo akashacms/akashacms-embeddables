@@ -51,13 +51,13 @@ var ytGetId = function($, elemYT) {
 }
 
 var ytBestThumbnail = function(thumbs) {
-    if (thumbs.standard && thumbs.standard.url) {
+    if (thumbs && thumbs.standard && thumbs.standard.url) {
         return thumbs.standard.url;
-    } else if (thumbs.high && thumbs.high.url) {
+    } else if (thumbs && thumbs.high && thumbs.high.url) {
         return thumbs.high.url;
-    } else if (thumbs.medium && thumbs.medium.url) {
+    } else if (thumbs && thumbs.medium && thumbs.medium.url) {
         return thumbs.medium.url;
-    } else if (thumbs["default"] && thumbs["default"].url) {
+    } else if (thumbs && thumbs["default"] && thumbs["default"].url) {
         return thumbs["default"].url;
     } else {
         return "";
@@ -93,131 +93,137 @@ module.exports.config = function(akasha, config) {
                     ytVidInfo(id, function(resultData) {
                         var result = resultData;
                         var item = result.items[0];
-                        var thumbs = item.snippet.thumbnails;
+                        // var thumbs = item.snippet.thumbnails;
                         
-                        var width = $(elemYT).attr('width')
-                            ? $(elemYT).attr('width')
-                            : undefined;
-                        var height = $(elemYT).attr('height')
-                            ? $(elemYT).attr('height')
-                            : undefined;
-                        var _class = $(elemYT).attr('class')
-                            ? $(elemYT).attr('class')
-                            : undefined;
-                        var style = $(elemYT).attr('style')
-                            ? $(elemYT).attr('style')
-                            : undefined;
+                        if (item) {
                         
-                        var player;
-                        if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed') {
-                            if (!width && !height) {
-                                width = "480";
-                                height = "270";
-                            }
-                            
-                            var yturl = {
-                                protocol: "http",
-                                hostname: "www.youtube.com",
-                                pathname: "/embed/"+ id,
-                                query: []
-                            };
-                            
-/* 
-                            
-                            TODO update akashacms.com
-                            TODO add a page of youtube embed examples
-                            
-                            TODO add new section to akashacms.com - layout examples - first is the youtube layout
-                            */
+							var width = $(elemYT).attr('width')
+								? $(elemYT).attr('width')
+								: undefined;
+							var height = $(elemYT).attr('height')
+								? $(elemYT).attr('height')
+								: undefined;
+							var _class = $(elemYT).attr('class')
+								? $(elemYT).attr('class')
+								: undefined;
+							var style = $(elemYT).attr('style')
+								? $(elemYT).attr('style')
+								: undefined;
+						
+							var player;
+							if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed') {
+								if (!width && !height) {
+									width = "480";
+									height = "270";
+								}
+							
+								var yturl = {
+									protocol: "http",
+									hostname: "www.youtube.com",
+									pathname: "/embed/"+ id,
+									query: []
+								};
+							
+	/* 
+							
+								TODO update akashacms.com
+								TODO add a page of youtube embed examples
+							
+								TODO add new section to akashacms.com - layout examples - first is the youtube layout
+								*/
 
-                            if ($(elemYT).attr('autohide'))
-                                yturl.query['autohide'] = $(elemYT).attr('autohide');
-                            if ($(elemYT).attr('autoplay'))
-                                yturl.query['autoplay'] = $(elemYT).attr('autoplay');
-                            if ($(elemYT).attr('cc_load_policy'))
-                                yturl.query['cc_load_policy'] = $(elemYT).attr('cc_load_policy');
-                            if ($(elemYT).attr('color'))
-                                yturl.query['color'] = $(elemYT).attr('color');
-                            if ($(elemYT).attr('controls'))
-                                yturl.query['controls'] = $(elemYT).attr('controls');
-                            if ($(elemYT).attr('disablekb'))
-                                yturl.query['disablekb'] = $(elemYT).attr('disablekb');
-                            if ($(elemYT).attr('enablejsapi'))
-                                yturl.query['enablejsapi'] = $(elemYT).attr('enablejsapi');
-                            if ($(elemYT).attr('end'))
-                                yturl.query['end'] = $(elemYT).attr('end');
-                            if ($(elemYT).attr('fs'))
-                                yturl.query['fs'] = $(elemYT).attr('fs');
-                            if ($(elemYT).attr('hl'))
-                                yturl.query['hl'] = $(elemYT).attr('hl');
-                            if ($(elemYT).attr('iv_load_policy'))
-                                yturl.query['iv_load_policy'] = $(elemYT).attr('iv_load_policy');
-                            if ($(elemYT).attr('list'))
-                                yturl.query['list'] = $(elemYT).attr('list');
-                            if ($(elemYT).attr('listType'))
-                                yturl.query['listType'] = $(elemYT).attr('listType');
-                            if ($(elemYT).attr('loop'))
-                                yturl.query['loop'] = $(elemYT).attr('loop');
-                            if ($(elemYT).attr('modestbranding'))
-                                yturl.query['modestbranding'] = $(elemYT).attr('modestbranding');
-                            if ($(elemYT).attr('origin'))
-                                yturl.query['origin'] = $(elemYT).attr('origin');
-                            if ($(elemYT).attr('playerapiid'))
-                                yturl.query['playerapiid'] = $(elemYT).attr('playerapiid');
-                            if ($(elemYT).attr('playlist'))
-                                yturl.query['playlist'] = $(elemYT).attr('playlist');
-                            if ($(elemYT).attr('playsinline'))
-                                yturl.query['playsinline'] = $(elemYT).attr('playsinline');
-                            if ($(elemYT).attr('rel'))
-                                yturl.query['rel'] = $(elemYT).attr('rel');
-                            if ($(elemYT).attr('showinfo'))
-                                yturl.query['showinfo'] = $(elemYT).attr('showinfo');
-                            if ($(elemYT).attr('start'))
-                                yturl.query['start'] = $(elemYT).attr('start');
-                            if ($(elemYT).attr('theme'))
-                                yturl.query['theme'] = $(elemYT).attr('theme');
-                            
-                            player = akasha.partialSync(config, "youtube-embed-code.html.ejs", {
-                                idYouTube: id,
-                                width: width,
-                                height: height,
-                                ytclass: _class,
-                                style: style,
-                                frameborder: "0",
-                                yturl: url.format(yturl)
-                            });
-                        }
+								if ($(elemYT).attr('autohide'))
+									yturl.query['autohide'] = $(elemYT).attr('autohide');
+								if ($(elemYT).attr('autoplay'))
+									yturl.query['autoplay'] = $(elemYT).attr('autoplay');
+								if ($(elemYT).attr('cc_load_policy'))
+									yturl.query['cc_load_policy'] = $(elemYT).attr('cc_load_policy');
+								if ($(elemYT).attr('color'))
+									yturl.query['color'] = $(elemYT).attr('color');
+								if ($(elemYT).attr('controls'))
+									yturl.query['controls'] = $(elemYT).attr('controls');
+								if ($(elemYT).attr('disablekb'))
+									yturl.query['disablekb'] = $(elemYT).attr('disablekb');
+								if ($(elemYT).attr('enablejsapi'))
+									yturl.query['enablejsapi'] = $(elemYT).attr('enablejsapi');
+								if ($(elemYT).attr('end'))
+									yturl.query['end'] = $(elemYT).attr('end');
+								if ($(elemYT).attr('fs'))
+									yturl.query['fs'] = $(elemYT).attr('fs');
+								if ($(elemYT).attr('hl'))
+									yturl.query['hl'] = $(elemYT).attr('hl');
+								if ($(elemYT).attr('iv_load_policy'))
+									yturl.query['iv_load_policy'] = $(elemYT).attr('iv_load_policy');
+								if ($(elemYT).attr('list'))
+									yturl.query['list'] = $(elemYT).attr('list');
+								if ($(elemYT).attr('listType'))
+									yturl.query['listType'] = $(elemYT).attr('listType');
+								if ($(elemYT).attr('loop'))
+									yturl.query['loop'] = $(elemYT).attr('loop');
+								if ($(elemYT).attr('modestbranding'))
+									yturl.query['modestbranding'] = $(elemYT).attr('modestbranding');
+								if ($(elemYT).attr('origin'))
+									yturl.query['origin'] = $(elemYT).attr('origin');
+								if ($(elemYT).attr('playerapiid'))
+									yturl.query['playerapiid'] = $(elemYT).attr('playerapiid');
+								if ($(elemYT).attr('playlist'))
+									yturl.query['playlist'] = $(elemYT).attr('playlist');
+								if ($(elemYT).attr('playsinline'))
+									yturl.query['playsinline'] = $(elemYT).attr('playsinline');
+								if ($(elemYT).attr('rel'))
+									yturl.query['rel'] = $(elemYT).attr('rel');
+								if ($(elemYT).attr('showinfo'))
+									yturl.query['showinfo'] = $(elemYT).attr('showinfo');
+								if ($(elemYT).attr('start'))
+									yturl.query['start'] = $(elemYT).attr('start');
+								if ($(elemYT).attr('theme'))
+									yturl.query['theme'] = $(elemYT).attr('theme');
+							
+								player = akasha.partialSync(config, "youtube-embed-code.html.ejs", {
+									idYouTube: id,
+									width: width,
+									height: height,
+									ytclass: _class,
+									style: style,
+									frameborder: "0",
+									yturl: url.format(yturl)
+								});
+							}
+						
+							if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
+								$(elemYT).replaceWith(
+									akasha.partialSync(config, "youtube-embed.html.ejs", {
+										title: item ? item.snippet.title : "",
+										html: player,
+										author_url: item ? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") : "",
+										author_name: item ? item.snippet.channelTitle : ""
+									}));
+								cb();
+							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
+								$(elemYT).replaceWith(player);
+								cb();
+							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
+								var thumbs = item ? item.snippet.thumbnails : undefined;
+								// if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
+								var align = $(elemYT).attr('align')
+									? $(elemYT).attr('align')
+									: undefined;
+								if (!width) width = "100%";
+								$(elemYT).replaceWith(
+									akasha.partialSync(config, "youtube-thumb.html.ejs", {
+										imgwidth: width,
+										imgalign: align,
+										imgclass: _class,
+										style: style,
+										imgurl: ytBestThumbnail(thumbs)
+									}));
+								cb();
+							} else {
+								cb(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
+							}
                         
-                        if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
-                            $(elemYT).replaceWith(
-                                akasha.partialSync(config, "youtube-embed.html.ejs", {
-                                    title: item.snippet.title,
-                                    html: player,
-                                    author_url: "http://youtube.com/user/"+ item.snippet.channelTitle +"/videos",
-                                    author_name: item.snippet.channelTitle
-                                }));
-                            cb();
-                        } else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
-                            $(elemYT).replaceWith(player);
-                            cb();
-                        } else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
-                            var thumbs = item.snippet.thumbnails;
-                            // if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
-                            var align = $(elemYT).attr('align')
-                                ? $(elemYT).attr('align')
-                                : undefined;
-                            if (!width) width = "100%";
-                            $(elemYT).replaceWith(
-                                akasha.partialSync(config, "youtube-thumb.html.ejs", {
-                                    imgwidth: width,
-                                    imgalign: align,
-                                    imgclass: _class,
-                                    style: style,
-                                    imgurl: ytBestThumbnail(thumbs)
-                                }));
-                            cb();
                         } else {
-                            cb(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
+                        	cb(new Error("No match for youtube id="+ id));
                         }
                         
                     });
@@ -250,16 +256,18 @@ module.exports.config = function(akasha, config) {
                     ytVidInfo(id, function(resultData) {
                         var result = resultData;
                         var item = result.items[0];
-                        var thumbs = item.snippet.thumbnails;
-                        if ($('head').get(0)) {
+                        var thumbs = item ? item.snippet.thumbnails : undefined;
+                        if (!item) {
+                        	cb(new Error("Youtube didn't get anything for id="+ id));
+                        } else if ($('head').get(0)) {
                             // Only do this substitution if we are on a completely rendered page
                             $('head').append(
                                 '<meta property="og:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n' +
                                 '<meta name="twitter:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n'
                             );
                             $(elemYT).replaceWith('');
-                        }
-                        cb();
+                            cb();
+                        } else cb();
                     });
                 }
             }, function(err) {
@@ -282,22 +290,26 @@ module.exports.config = function(akasha, config) {
                         var result = resultData;
                         var item = result.items[0];
                         
-                        if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
-                            $(elemYT).replaceWith(item.snippet.title);
-                            cb();
-                        } else if (elemYT.name /* .prop('tagName') */ === 'youtube-author') {
-                            $(elemYT).replaceWith(item.snippet.channelTitle);
-                            cb();
-                        } else if (elemYT.name /* .prop('tagName') */ === 'youtube-description') {
-                            $(elemYT).replaceWith(item.snippet.description);
-                            cb();
-                        } else if (elemYT.name /* .prop('tagName') */ === 'youtube-publ-date') {
-                            // TODO fix this to parse & print nicely
-                            $(elemYT).replaceWith(item.snippet.publishedAt);
-                            cb();
-                        } else {
-                            cb(new Error("failed to match -title or -author or -description "+ $(elemYT).name));
-                        }
+                        if (item) {
+							if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
+								$(elemYT).replaceWith(item.snippet.title);
+								cb();
+							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-author') {
+								$(elemYT).replaceWith(item.snippet.channelTitle);
+								cb();
+							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-description') {
+								$(elemYT).replaceWith(item.snippet.description);
+								cb();
+							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-publ-date') {
+								// TODO fix this to parse & print nicely
+								$(elemYT).replaceWith(item.snippet.publishedAt);
+								cb();
+							} else {
+								cb(new Error("failed to match -title or -author or -description "+ $(elemYT).name));
+							}
+						} else {
+							cb(new Error("nothing found for youtube id="+ id));
+						}
                     });
                 }
             }, function(err) {
