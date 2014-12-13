@@ -76,7 +76,7 @@ module.exports.config = function(akasha, config) {
     }
     
     if (config.mahabhuta) {
-        config.mahabhuta.push(function(akasha, config, $, metadata, done) {
+        config.mahabhuta.push(function($, metadata, done) {
             // <youtube-video href=".."/>  TBD: autoplay, thumbnail+lightbox
             var elemsYT = [];
             $('youtube-video').each(function(i, elem) { elemsYT.push(elem); });
@@ -244,7 +244,7 @@ module.exports.config = function(akasha, config) {
             });
         });
         
-        config.mahabhuta.push(function(akasha, config, $, metadata, done) {
+        config.mahabhuta.push(function($, metadata, done) {
             // <youtube-metadata id="" href=".."/>  
             var elemsYT = [];
             $('youtube-metadata').each(function(i, elem) { elemsYT[i] = elem; });
@@ -274,7 +274,7 @@ module.exports.config = function(akasha, config) {
                 done(err);
             });
         });
-        config.mahabhuta.push(function(akasha, config, $, metadata, done) {
+        config.mahabhuta.push(function($, metadata, done) {
             // <youtube-title id="" href=".."/>  
             var elemsYT = [];
             $('youtube-title').each(function(i, elem) { elemsYT.push(elem); });
@@ -316,7 +316,7 @@ module.exports.config = function(akasha, config) {
                 done(err);
             });
         });
-        config.mahabhuta.push(function(akasha, config, $, metadata, done) {
+        config.mahabhuta.push(function($, metadata, done) {
             // <oembed href="..." optional: template="..."/>
             var elemsOE = [];
             $('oembed').each(function(i, elem) { elemsOE[i] = elem; });
@@ -337,7 +337,7 @@ module.exports.config = function(akasha, config) {
                 done(err);
             });
         });
-        config.mahabhuta.push(function(akasha, config, $, metadata, done) {
+        config.mahabhuta.push(function($, metadata, done) {
             var href, width, height;
             // <googledocs-viewer href="..." />
             $('googledocs-viewer').each(function(i, elem) {
