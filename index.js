@@ -22,7 +22,8 @@ var util     = require('util');
 var url      = require('url');
 var async    = require('async');
 
-var youtube = require('youtube-node');
+var YouTube = require('youtube-node');
+var youtube = new YouTube();
 
 var ytVidz = [];
 var ytVidInfo = function(id, done) {
