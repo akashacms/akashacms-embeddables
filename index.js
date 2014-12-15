@@ -180,7 +180,7 @@ module.exports.config = function(akasha, config) {
 								if ($(elemYT).attr('theme'))
 									yturl.query['theme'] = $(elemYT).attr('theme');
 							
-								player = akasha.partialSync(config, "youtube-embed-code.html.ejs", {
+								player = akasha.partialSync("youtube-embed-code.html.ejs", {
 									idYouTube: id,
 									width: width,
 									height: height,
@@ -193,7 +193,7 @@ module.exports.config = function(akasha, config) {
 						
 							if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
 								$(elemYT).replaceWith(
-									akasha.partialSync(config, "youtube-embed.html.ejs", {
+									akasha.partialSync("youtube-embed.html.ejs", {
 										title: item ? item.snippet.title : "",
 										html: player,
 										author_url: item ? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") : "",
@@ -211,7 +211,7 @@ module.exports.config = function(akasha, config) {
 									: undefined;
 								if (!width) width = "100%";
 								$(elemYT).replaceWith(
-									akasha.partialSync(config, "youtube-thumb.html.ejs", {
+									akasha.partialSync("youtube-thumb.html.ejs", {
 										imgwidth: width,
 										imgalign: align,
 										imgclass: _class,
@@ -345,7 +345,7 @@ module.exports.config = function(akasha, config) {
                 href = $(this).attr("href");
                 if (!href) done(new Error("URL required for googledocs-viewer"));
                 else $(this).replaceWith(
-                    akasha.partialSync(config, "google-doc-viewer.html.ejs", {
+                    akasha.partialSync("google-doc-viewer.html.ejs", {
                         docViewerUrl: generateGoogleDocViewerUrl(href)
                     })
                 );
@@ -357,7 +357,7 @@ module.exports.config = function(akasha, config) {
                 var anchorText = $(this).text();
                 if (!anchorText) anchorText = "Click Here";
                 return $(this).replaceWith(
-                    akasha.partialSync(config, "google-doc-viewer-link.html.ejs", {
+                    akasha.partialSync("google-doc-viewer-link.html.ejs", {
                         docViewerUrl: generateGoogleDocViewerUrl(href),
                         anchorText: anchorText
                     })
@@ -372,7 +372,7 @@ module.exports.config = function(akasha, config) {
                 height = $(this).attr("height");
                 if (!height) height = "900px";
                 return $(this).replaceWith(
-                    akasha.partialSync(config, "viewerjs-embed.html.ejs", {
+                    akasha.partialSync("viewerjs-embed.html.ejs", {
                         docUrl: generateViewerJSURL(href),
                         width: width, height: height
                     })
@@ -385,7 +385,7 @@ module.exports.config = function(akasha, config) {
                 var anchorText = $(this).text();
                 if (!anchorText) anchorText = "Click Here";
                 return $(this).replaceWith(
-                    akasha.partialSync(config, "viewerjs-link.html.ejs", {
+                    akasha.partialSync("viewerjs-link.html.ejs", {
                         docUrl: generateViewerJSURL(href),
                         anchorText: anchorText
                     })
@@ -396,7 +396,7 @@ module.exports.config = function(akasha, config) {
     }
     config.funcs.googleDocsViewer = function(arg, callback) {
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
-        var val = akasha.partialSync(config, "google-doc-viewer.html.ejs", {
+        var val = akasha.partialSync("google-doc-viewer.html.ejs", {
             docViewerUrl: generateGoogleDocViewerUrl(arg.documentUrl)
         });
         if (callback) callback(undefined, val);
@@ -411,7 +411,7 @@ module.exports.config = function(akasha, config) {
                 arg.anchorText = "View";
             }
         }
-        var val = akasha.partialSync(config, "google-doc-viewer-link.html.ejs", {
+        var val = akasha.partialSync("google-doc-viewer-link.html.ejs", {
             docViewerUrl: generateGoogleDocViewerUrl(arg.documentUrl),
             anchorText: arg.anchorText
         });
@@ -429,7 +429,7 @@ module.exports.config = function(akasha, config) {
         if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
         if (!arg.template)   { arg.template = "viewerjs-link.html.ejs"; }
         if (!arg.anchorText) { arg.anchorText = "Click here"; }
-        var val = akasha.partialSync(config, arg.template, {
+        var val = akasha.partialSync(arg.template, {
             docUrl: generateViewerJSURL(arg.docUrl),
             anchorText: arg.anchorText
         });
@@ -440,7 +440,7 @@ module.exports.config = function(akasha, config) {
         if (!arg.template)   { arg.template = "viewerjs-embed.html.ejs"; }
         if (!arg.width)      { arg.width = "100%"; }
         if (!arg.height)     { arg.height = "900px"; }
-        var val = akasha.partialSync(config, arg.template, {
+        var val = akasha.partialSync(arg.template, {
             docUrl: generateViewerJSURL(arg.docUrl),
             width: arg.width,
             height: arg.height

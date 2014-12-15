@@ -11,11 +11,11 @@
     "type": "git",
     "url": "git://github.com/robogeek/akashacms-embeddables.git"
   },
-  "version": "0.1.12",
+  "version": "0.1.13",
   "engines": {
     "node": ">=0.10.1"
   },
   "dependencies": {
-    "youtube-node": ""
+    "youtube-node": "*"
   }
 }
