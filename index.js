@@ -132,6 +132,8 @@ module.exports.config = function(akasha, config) {
 							
 								TODO add new section to akashacms.com - layout examples - first is the youtube layout
 								*/
+								
+								// These options are explained here: https://developers.google.com/youtube/player_parameters
 
 								if ($(elemYT).attr('autohide'))
 									yturl.query['autohide'] = $(elemYT).attr('autohide');
