@@ -77,7 +77,7 @@ module.exports.config = function(akasha, config) {
     }
     
     if (config.mahabhuta) {
-        config.mahabhuta.push(function($, metadata, done) {
+        config.mahabhuta.push(function($, metadata, dirty, done) {
             // <youtube-video href=".."/>  TBD: autoplay, thumbnail+lightbox
             var elemsYT = [];
             $('youtube-video').each(function(i, elem) { elemsYT.push(elem); });
@@ -231,23 +231,12 @@ module.exports.config = function(akasha, config) {
                         
                     });
                 }
-                
-                /* akasha.oembedRender({
-                    template: "youtube-embed.html.ejs",
-                    url: $(elemYT).attr("href")
-                }, function(err, html) {
-                    if (err) cb(err);
-                    else { 
-                        $(elemYT).replaceWith(html);
-                        cb();
-                    }
-                }); */
             }, function(err) {
                 done(err);
             });
         });
         
-        config.mahabhuta.push(function($, metadata, done) {
+        config.mahabhuta.push(function($, metadata, dirty, done) {
             // <youtube-metadata id="" href=".."/>  
             var elemsYT = [];
             $('youtube-metadata').each(function(i, elem) { elemsYT[i] = elem; });
@@ -277,7 +266,7 @@ module.exports.config = function(akasha, config) {
                 done(err);
             });
         });
-        config.mahabhuta.push(function($, metadata, done) {
+        config.mahabhuta.push(function($, metadata, dirty, done) {
             // <youtube-title id="" href=".."/>  
             var elemsYT = [];
             $('youtube-title').each(function(i, elem) { elemsYT.push(elem); });
@@ -319,7 +308,7 @@ module.exports.config = function(akasha, config) {
                 done(err);
             });
         });
-        config.mahabhuta.push(function($, metadata, done) {
+        config.mahabhuta.push(function($, metadata, dirty, done) {
             // <oembed href="..." optional: template="..."/>
             var elemsOE = [];
             $('oembed').each(function(i, elem) { elemsOE[i] = elem; });
@@ -340,17 +329,19 @@ module.exports.config = function(akasha, config) {
                 done(err);
             });
         });
-        config.mahabhuta.push(function($, metadata, done) {
+        config.mahabhuta.push(function($, metadata, dirty, done) {
             var href, width, height;
             // <googledocs-viewer href="..." />
             $('googledocs-viewer').each(function(i, elem) {
                 href = $(this).attr("href");
                 if (!href) done(new Error("URL required for googledocs-viewer"));
-                else $(this).replaceWith(
-                    akasha.partialSync("google-doc-viewer.html.ejs", {
-                        docViewerUrl: generateGoogleDocViewerUrl(href)
-                    })
-                );
+                else {
+                	$(this).replaceWith(
+						akasha.partialSync("google-doc-viewer.html.ejs", {
+							docViewerUrl: generateGoogleDocViewerUrl(href)
+						})
+                	);
+                }
             });
             // <googledocs-view-link href="..." >Anchor Text</googledocs-view-link>
             $('googledocs-view-link').each(function(i, elem) {
