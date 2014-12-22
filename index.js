@@ -194,14 +194,18 @@ module.exports.config = function(akasha, config) {
 							}
 						
 							if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
-								$(elemYT).replaceWith(
-									akasha.partialSync("youtube-embed.html.ejs", {
-										title: item ? item.snippet.title : "",
-										html: player,
-										author_url: item ? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") : "",
-										author_name: item ? item.snippet.channelTitle : ""
-									}));
-								cb();
+								akasha.partial("youtube-embed.html.ejs", {
+									title: item ? item.snippet.title : "",
+									html: player,
+									author_url: item ? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") : "",
+									author_name: item ? item.snippet.channelTitle : ""
+								}, function(err, embed) {
+									if (err) { logger.error(err); cb(err); }
+									else {
+										$(elemYT).replaceWith(embed);
+										cb();
+									}
+								});
 							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
 								$(elemYT).replaceWith(player);
 								cb();
@@ -212,15 +216,20 @@ module.exports.config = function(akasha, config) {
 									? $(elemYT).attr('align')
 									: undefined;
 								if (!width) width = "100%";
-								$(elemYT).replaceWith(
-									akasha.partialSync("youtube-thumb.html.ejs", {
-										imgwidth: width,
-										imgalign: align,
-										imgclass: _class,
-										style: style,
-										imgurl: ytBestThumbnail(thumbs)
-									}));
-								cb();
+								
+								akasha.partialSync("youtube-thumb.html.ejs", {
+									imgwidth: width,
+									imgalign: align,
+									imgclass: _class,
+									style: style,
+									imgurl: ytBestThumbnail(thumbs)
+								}, function(err, thumb) {
+									if (err) { logger.error(err); cb(err); }
+									else {
+										$(elemYT).replaceWith(thumb);
+										cb();
+									}
+								});
 							} else {
 								cb(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
 							}
@@ -388,6 +397,7 @@ module.exports.config = function(akasha, config) {
         });
     }
     config.funcs.googleDocsViewer = function(arg, callback) {
+    	throw new Error("Do not use googleDocsViewer");
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
         var val = akasha.partialSync("google-doc-viewer.html.ejs", {
             docViewerUrl: generateGoogleDocViewerUrl(arg.documentUrl)
@@ -396,6 +406,7 @@ module.exports.config = function(akasha, config) {
         return val;
     };
     config.funcs.googleDocsViewLink = function(arg, callback) {
+    	throw new Error("Do not use googleDocsViewLink");
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
         if (!arg.anchorText)   {
             if (arg.documentAnchorText) {
@@ -412,6 +423,7 @@ module.exports.config = function(akasha, config) {
         return val;
     };
     config.funcs.youtubePlayer = function(arg, callback) {
+    	throw new Error("Do not use youtubePlayer");
         if (!callback)       { throw new Error("No callback given"); }
         if (!arg.youtubeUrl) { callback(new Error("No youtubeUrl given")); }
         if (!arg.template)   { arg.template = "youtube-embed.html.ejs"; }
@@ -419,6 +431,7 @@ module.exports.config = function(akasha, config) {
         akasha.oembedRender(arg, callback);
     };
     config.funcs.viewerJSLink = function(arg, callback) {
+    	throw new Error("Do not use viewerJSLink");
         if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
         if (!arg.template)   { arg.template = "viewerjs-link.html.ejs"; }
         if (!arg.anchorText) { arg.anchorText = "Click here"; }
@@ -429,6 +442,7 @@ module.exports.config = function(akasha, config) {
         return val;
     };
     config.funcs.viewerJSViewer = function(arg, callback) {
+    	throw new Error("Do not use viewerJSViewer");
         if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
         if (!arg.template)   { arg.template = "viewerjs-embed.html.ejs"; }
         if (!arg.width)      { arg.width = "100%"; }
