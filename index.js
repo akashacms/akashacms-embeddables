@@ -21,9 +21,13 @@ var path     = require('path');
 var util     = require('util');
 var url      = require('url');
 var async    = require('async');
+var request  = require('request');
 
 var YouTube = require('youtube-node');
 var youtube = new YouTube();
+
+var logger;
+var akasha;
 
 var ytVidz = [];
 var ytVidInfo = function(id, done) {
@@ -35,7 +39,7 @@ var ytVidInfo = function(id, done) {
             done(resultData);
         });
     }
-}
+};
 
 var ytGetId = function($, elemYT) {
     var id;
@@ -49,7 +53,7 @@ var ytGetId = function($, elemYT) {
         }
     }
     return id;
-}
+};
 
 var ytBestThumbnail = function(thumbs) {
     if (thumbs && thumbs.standard && thumbs.standard.url) {
@@ -63,12 +67,39 @@ var ytBestThumbnail = function(thumbs) {
     } else {
         return "";
     }
-}
+};
+
+var vimeoCache = [];
+var vimeoData = function(url2request, done) {
+	// logger.trace('vimeoData '+ url2request);
+	if (vimeoCache[url2request]) {
+		done(undefined, vimeoCache[url2request]);
+	} else {
+		request(url.format({
+			protocol: 'http',
+			host: 'vimeo.com',
+			pathname: '/api/oembed.json',
+			query: {
+				url: url2request
+			}
+		}),
+		function(err, res, body) {
+			if (err) { logger.error(err); done(err); }
+			else {
+				// logger.trace(body);
+				vimeoCache[url2request] = JSON.parse(body);
+				done(undefined, vimeoCache[url2request]);
+			}
+		});
+	}
+};
 
 /**
  * Add ourselves to the config data.
  **/
-module.exports.config = function(akasha, config) {
+module.exports.config = function(_akasha, config) {
+	akasha = _akasha;
+	logger = akasha.getLogger("embeddables");
     config.root_partials.push(path.join(__dirname, 'partials'));
     config.root_assets.unshift(path.join(__dirname, 'assets'));
     
@@ -217,7 +248,7 @@ module.exports.config = function(akasha, config) {
 									: undefined;
 								if (!width) width = "100%";
 								
-								akasha.partialSync("youtube-thumb.html.ejs", {
+								akasha.partial("youtube-thumb.html.ejs", {
 									imgwidth: width,
 									imgalign: align,
 									imgclass: _class,
@@ -226,6 +257,7 @@ module.exports.config = function(akasha, config) {
 								}, function(err, thumb) {
 									if (err) { logger.error(err); cb(err); }
 									else {
+										// logger.trace('youtube-thumb '+ thumb);
 										$(elemYT).replaceWith(thumb);
 										cb();
 									}
@@ -317,8 +349,82 @@ module.exports.config = function(akasha, config) {
                 done(err);
             });
         });
+        
+        config.mahabhuta.push(function($, metadata, dirty, done) {
+        	// <vimeo-player url="..." />
+        	// <vimeo-thumb url="..." />
+        	// <vimeo-title url="..." />
+        	// <vimeo-author url="..." />
+        	// <vimeo-description url="..." />
+        	
+            var elements = [];
+            $('vimeo-player').each(function(i, elem) { elements.push(elem); });
+            $('vimeo-thumbnail').each(function(i, elem) { elements.push(elem); });
+            $('vimeo-title').each(function(i, elem) { elements.push(elem); });
+            $('vimeo-author').each(function(i, elem) { elements.push(elem); });
+            $('vimeo-description').each(function(i, elem) { elements.push(elem); });
+            async.eachSeries(elements, function(element, next) {
+            	vimeoData($(element).attr('url'), function(err, vdata) {
+            		if (err) next(err);
+            		else {
+            			if (element.name === 'vimeo-player') {
+            				$(element).replaceWith(vdata.html);
+            				next();
+            			} else if (element.name === 'vimeo-thumbnail') {
+            				
+							var width = $(element).attr('width')
+								? $(element).attr('width')
+								: undefined;
+							var height = $(element).attr('height')
+								? $(element).attr('height')
+								: undefined;
+							var _class = $(element).attr('class')
+								? $(element).attr('class')
+								: undefined;
+							var style = $(element).attr('style')
+								? $(element).attr('style')
+								: undefined;
+							var align = $(element).attr('align')
+								? $(element).attr('align')
+								: undefined;
+								
+							akasha.partial("youtube-thumb.html.ejs", {
+								imgwidth: width,
+								imgalign: align,
+								imgclass: _class,
+								style: style,
+								imgurl: vdata.thumbnail_url
+							}, function(err, thumb) {
+								if (err) { logger.error(err); cb(err); }
+								else {
+									// logger.trace('vimeo-thumbnail '+ thumb);
+									$(element).replaceWith(thumb);
+									next();
+								}
+							});
+            			} else if (element.name === 'vimeo-title') {
+            				$(element).replaceWith(vdata.title);
+            				next();
+            			} else if (element.name === 'vimeo-author') {
+            				$(element).replaceWith(vdata.author_name);
+            				next();
+            			} else if (element.name === 'vimeo-description') {
+            				$(element).replaceWith(vdata.description);
+            				next();
+            			} else {
+            				next();
+            			}
+            		}
+            	});
+            },
+            function(err) {
+            	if (err) done(err); else done();
+            });
+        });
+        
         config.mahabhuta.push(function($, metadata, dirty, done) {
             // <oembed href="..." optional: template="..."/>
+            logger.trace('oembed');
             var elemsOE = [];
             $('oembed').each(function(i, elem) { elemsOE[i] = elem; });
             // util.log(util.inspect(elemsOE));
@@ -338,6 +444,7 @@ module.exports.config = function(akasha, config) {
                 done(err);
             });
         });
+        
         config.mahabhuta.push(function($, metadata, dirty, done) {
             var href, width, height;
             // <googledocs-viewer href="..." />
