@@ -228,7 +228,9 @@ module.exports.config = function(_akasha, config) {
 								akasha.partial("youtube-embed.html.ejs", {
 									title: item ? item.snippet.title : "",
 									html: player,
-									author_url: item ? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") : "",
+									author_url: item 
+											? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") 
+											: "",
 									author_name: item ? item.snippet.channelTitle : ""
 								}, function(err, embed) {
 									if (err) { logger.error(err); next(err); }
@@ -424,16 +426,16 @@ module.exports.config = function(_akasha, config) {
             var elemsOE = [];
             $('oembed').each(function(i, elem) { elemsOE[i] = elem; });
             // util.log(util.inspect(elemsOE));
-            async.eachSeries(elemsOE, function(elemOE, cb) {
+            async.eachSeries(elemsOE, function(elemOE, next) {
                 // util.log(util.inspect(elemOE));
                 akasha.oembedRender({
                     template: $(elemOE).attr('template'),
                     url: $(elemOE).attr("href")
                 }, function(err, html) {
-                    if (err) cb(err);
+                    if (err) next(err);
                     else { 
                         $(elemOE).replaceWith(html);
-                        cb();
+                        next();
                     }
                 });
             }, function(err) {
