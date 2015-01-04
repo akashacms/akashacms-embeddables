@@ -115,12 +115,13 @@ module.exports.config = function(_akasha, config) {
             $('youtube-video-embed').each(function(i, elem) { elemsYT.push(elem); });
             $('youtube-thumbnail').each(function(i, elem) { elemsYT.push(elem); });
             // util.log(util.inspect(elemsYT));
-            async.forEachSeries(elemsYT, function(elemYT, cb) {
+            async.eachSeries(elemsYT, function(elemYT, next) {
                 // util.log(util.inspect(elemYT));
                 
+                logger.trace(elemYT.name);
                 var id = ytGetId($, elemYT);
                 if (!id) {
-                    cb(new Error("No Youtube ID"));
+                    next(new Error("No Youtube ID"));
                 } else {
                     ytVidInfo(id, function(resultData) {
                         var result = resultData;
@@ -156,8 +157,7 @@ module.exports.config = function(_akasha, config) {
 									query: []
 								};
 							
-	/* 
-							
+								/* 
 								TODO update akashacms.com
 								TODO add a page of youtube embed examples
 							
@@ -231,15 +231,15 @@ module.exports.config = function(_akasha, config) {
 									author_url: item ? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") : "",
 									author_name: item ? item.snippet.channelTitle : ""
 								}, function(err, embed) {
-									if (err) { logger.error(err); cb(err); }
+									if (err) { logger.error(err); next(err); }
 									else {
 										$(elemYT).replaceWith(embed);
-										cb();
+										next();
 									}
 								});
 							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
 								$(elemYT).replaceWith(player);
-								cb();
+								next();
 							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
 								var thumbs = item ? item.snippet.thumbnails : undefined;
 								// if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
@@ -255,25 +255,20 @@ module.exports.config = function(_akasha, config) {
 									style: style,
 									imgurl: ytBestThumbnail(thumbs)
 								}, function(err, thumb) {
-									if (err) { logger.error(err); cb(err); }
+									if (err) { logger.error(err); next(err); }
 									else {
 										// logger.trace('youtube-thumb '+ thumb);
 										$(elemYT).replaceWith(thumb);
-										cb();
+										next();
 									}
 								});
-							} else {
-								cb(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
-							}
-                        
-                        } else {
-                        	cb(new Error("No match for youtube id="+ id));
-                        }
-                        
+							} else next(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
+                        } else next(new Error("No match for youtube id="+ id));
                     });
                 }
             }, function(err) {
-                done(err);
+                if (err) done(err);
+                else done();
             });
         });
         
@@ -281,17 +276,18 @@ module.exports.config = function(_akasha, config) {
             // <youtube-metadata id="" href=".."/>  
             var elemsYT = [];
             $('youtube-metadata').each(function(i, elem) { elemsYT[i] = elem; });
-            async.forEachSeries(elemsYT, function(elemYT, cb) {
+            async.eachSeries(elemsYT, function(elemYT, next) {
+                logger.trace(elemYT.name);
                 var id = ytGetId($, elemYT);
                 if (!id) {
-                    cb(new Error("No Youtube ID"));
+                    next(new Error("No Youtube ID"));
                 } else {
                     ytVidInfo(id, function(resultData) {
                         var result = resultData;
                         var item = result.items[0];
                         var thumbs = item ? item.snippet.thumbnails : undefined;
                         if (!item) {
-                        	cb(new Error("Youtube didn't get anything for id="+ id));
+                        	next(new Error("Youtube didn't get anything for id="+ id));
                         } else if ($('head').get(0)) {
                             // Only do this substitution if we are on a completely rendered page
                             $('head').append(
@@ -299,12 +295,13 @@ module.exports.config = function(_akasha, config) {
                                 '<meta name="twitter:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n'
                             );
                             $(elemYT).replaceWith('');
-                            cb();
-                        } else cb();
+                            next();
+                        } else next();
                     });
                 }
             }, function(err) {
-                done(err);
+                if (err) done(err);
+                else done();
             });
         });
         config.mahabhuta.push(function($, metadata, dirty, done) {
@@ -314,10 +311,11 @@ module.exports.config = function(_akasha, config) {
             $('youtube-author').each(function(i, elem) { elemsYT.push(elem); });
             $('youtube-description').each(function(i, elem) { elemsYT.push(elem); });
             $('youtube-publ-date').each(function(i, elem) { elemsYT.push(elem); });
-            async.forEachSeries(elemsYT, function(elemYT, cb) {
+            async.eachSeries(elemsYT, function(elemYT, next) {
+                logger.trace(elemYT.name);
                 var id = ytGetId($, elemYT);
                 if (!id) {
-                    cb(new Error("No Youtube ID"));
+                    next(new Error("No Youtube ID"));
                 } else {
                     ytVidInfo(id, function(resultData) {
                         var result = resultData;
@@ -326,27 +324,24 @@ module.exports.config = function(_akasha, config) {
                         if (item) {
 							if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
 								$(elemYT).replaceWith(item.snippet.title);
-								cb();
+								next();
 							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-author') {
 								$(elemYT).replaceWith(item.snippet.channelTitle);
-								cb();
+								next();
 							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-description') {
 								$(elemYT).replaceWith(item.snippet.description);
-								cb();
+								next();
 							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-publ-date') {
 								// TODO fix this to parse & print nicely
 								$(elemYT).replaceWith(item.snippet.publishedAt);
-								cb();
-							} else {
-								cb(new Error("failed to match -title or -author or -description "+ $(elemYT).name));
-							}
-						} else {
-							cb(new Error("nothing found for youtube id="+ id));
-						}
+								next();
+							} else next(new Error("failed to match -title or -author or -description "+ $(elemYT).name));
+						} else next(new Error("nothing found for youtube id="+ id));
                     });
                 }
             }, function(err) {
-                done(err);
+                if (err) done(err);
+                else done();
             });
         });
         
@@ -364,6 +359,7 @@ module.exports.config = function(_akasha, config) {
             $('vimeo-author').each(function(i, elem) { elements.push(elem); });
             $('vimeo-description').each(function(i, elem) { elements.push(elem); });
             async.eachSeries(elements, function(element, next) {
+            	logger.trace(element.name);
             	vimeoData($(element).attr('url'), function(err, vdata) {
             		if (err) next(err);
             		else {
@@ -395,7 +391,7 @@ module.exports.config = function(_akasha, config) {
 								style: style,
 								imgurl: vdata.thumbnail_url
 							}, function(err, thumb) {
-								if (err) { logger.error(err); cb(err); }
+								if (err) { logger.error(err); next(err); }
 								else {
 									// logger.trace('vimeo-thumbnail '+ thumb);
 									$(element).replaceWith(thumb);
@@ -441,7 +437,8 @@ module.exports.config = function(_akasha, config) {
                     }
                 });
             }, function(err) {
-                done(err);
+                if (err) done(err);
+                else done();
             });
         });
         
