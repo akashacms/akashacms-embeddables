@@ -43,9 +43,9 @@ var ytVidInfo = function(id, done) {
 
 var ytGetId = function($, elemYT) {
     var id;
-    if ($(elemYT).attr('id')) {
+    if (elemYT && $(elemYT).attr('id')) {
         id = $(elemYT).attr('id');
-    } else if ($(elemYT).attr('href')) {
+    } else if (elemYT && $(elemYT).attr('href')) {
         var _yturl = $(elemYT).attr('href');
         var yturl = url.parse(_yturl, true);
         if (yturl.query && yturl.query.v) {
@@ -428,7 +428,7 @@ module.exports.config = function(_akasha, config) {
             var elemsOE = [];
             $('oembed').each(function(i, elem) { elemsOE[i] = elem; });
             // util.log(util.inspect(elemsOE));
-            async.forEachSeries(elemsOE, function(elemOE, cb) {
+            async.eachSeries(elemsOE, function(elemOE, cb) {
                 // util.log(util.inspect(elemOE));
                 akasha.oembedRender({
                     template: $(elemOE).attr('template'),
@@ -503,7 +503,7 @@ module.exports.config = function(_akasha, config) {
             done();
         });
     }
-    config.funcs.googleDocsViewer = function(arg, callback) {
+    /* config.funcs.googleDocsViewer = function(arg, callback) {
     	throw new Error("Do not use googleDocsViewer");
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
         var val = akasha.partialSync("google-doc-viewer.html.ejs", {
@@ -560,7 +560,7 @@ module.exports.config = function(_akasha, config) {
             height: arg.height
         });
         return val;
-    };
+    }; */
 };
 
 var generateGoogleDocViewerUrl = function(documentUrl) {
