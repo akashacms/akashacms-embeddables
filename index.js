@@ -125,7 +125,7 @@ module.exports.config = function(_akasha, config) {
                 } else {
                     ytVidInfo(id, function(resultData) {
                         var result = resultData;
-                        var item = result.items[0];
+                        var item = result.items && result.items.length >= 0 ? result.items[0] : null;
                         // var thumbs = item.snippet.thumbnails;
                         
                         if (item) {
