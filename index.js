@@ -32,11 +32,15 @@ var akasha;
 var ytVidz = [];
 var ytVidInfo = function(id, done) {
     if (ytVidz[id]) {
-        done(ytVidz[id]);
+        done(null, ytVidz[id]);
     } else {
         youtube.getById(id, function(resultData) {
-            ytVidz[id] = resultData;
-            done(resultData);
+        	if (resultData.error) {
+        		done(new Error(resultData.error.message));
+        	} else {
+				ytVidz[id] = resultData;
+				done(null, resultData);
+			}
         });
     }
 };
@@ -123,149 +127,154 @@ module.exports.config = function(_akasha, config) {
                 if (!id) {
                     next(new Error("No Youtube ID"));
                 } else {
-                    ytVidInfo(id, function(resultData) {
-                        var result = resultData;
-                        var item = result.items && result.items.length >= 0 ? result.items[0] : null;
-                        // var thumbs = item.snippet.thumbnails;
-                        
-                        if (item) {
-                        
-							var width = $(elemYT).attr('width')
-								? $(elemYT).attr('width')
-								: undefined;
-							var height = $(elemYT).attr('height')
-								? $(elemYT).attr('height')
-								: undefined;
-							var _class = $(elemYT).attr('class')
-								? $(elemYT).attr('class')
-								: undefined;
-							var style = $(elemYT).attr('style')
-								? $(elemYT).attr('style')
-								: undefined;
+                    ytVidInfo(id, function(err, resultData) {
+                    	if (err) next(err);
+                    	else {
+							var result = resultData;
+							var item = result.items && result.items.length >= 0 ? result.items[0] : null;
+							// var thumbs = item.snippet.thumbnails;
+							
+							var template = $(elemYT).attr('template');
 						
-							var player;
-							if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed') {
-								if (!width && !height) {
-									width = "480";
-									height = "270";
-								}
-							
-								var yturl = {
-									protocol: "http",
-									hostname: "www.youtube.com",
-									pathname: "/embed/"+ id,
-									query: []
-								};
-							
-								/* 
-								TODO update akashacms.com
-								TODO add a page of youtube embed examples
-							
-								TODO add new section to akashacms.com - layout examples - first is the youtube layout
-								*/
-								
-								// These options are explained here: https://developers.google.com/youtube/player_parameters
-
-								if ($(elemYT).attr('autohide'))
-									yturl.query['autohide'] = $(elemYT).attr('autohide');
-								if ($(elemYT).attr('autoplay'))
-									yturl.query['autoplay'] = $(elemYT).attr('autoplay');
-								if ($(elemYT).attr('cc_load_policy'))
-									yturl.query['cc_load_policy'] = $(elemYT).attr('cc_load_policy');
-								if ($(elemYT).attr('color'))
-									yturl.query['color'] = $(elemYT).attr('color');
-								if ($(elemYT).attr('controls'))
-									yturl.query['controls'] = $(elemYT).attr('controls');
-								if ($(elemYT).attr('disablekb'))
-									yturl.query['disablekb'] = $(elemYT).attr('disablekb');
-								if ($(elemYT).attr('enablejsapi'))
-									yturl.query['enablejsapi'] = $(elemYT).attr('enablejsapi');
-								if ($(elemYT).attr('end'))
-									yturl.query['end'] = $(elemYT).attr('end');
-								if ($(elemYT).attr('fs'))
-									yturl.query['fs'] = $(elemYT).attr('fs');
-								if ($(elemYT).attr('hl'))
-									yturl.query['hl'] = $(elemYT).attr('hl');
-								if ($(elemYT).attr('iv_load_policy'))
-									yturl.query['iv_load_policy'] = $(elemYT).attr('iv_load_policy');
-								if ($(elemYT).attr('list'))
-									yturl.query['list'] = $(elemYT).attr('list');
-								if ($(elemYT).attr('listType'))
-									yturl.query['listType'] = $(elemYT).attr('listType');
-								if ($(elemYT).attr('loop'))
-									yturl.query['loop'] = $(elemYT).attr('loop');
-								if ($(elemYT).attr('modestbranding'))
-									yturl.query['modestbranding'] = $(elemYT).attr('modestbranding');
-								if ($(elemYT).attr('origin'))
-									yturl.query['origin'] = $(elemYT).attr('origin');
-								if ($(elemYT).attr('playerapiid'))
-									yturl.query['playerapiid'] = $(elemYT).attr('playerapiid');
-								if ($(elemYT).attr('playlist'))
-									yturl.query['playlist'] = $(elemYT).attr('playlist');
-								if ($(elemYT).attr('playsinline'))
-									yturl.query['playsinline'] = $(elemYT).attr('playsinline');
-								if ($(elemYT).attr('rel'))
-									yturl.query['rel'] = $(elemYT).attr('rel');
-								if ($(elemYT).attr('showinfo'))
-									yturl.query['showinfo'] = $(elemYT).attr('showinfo');
-								if ($(elemYT).attr('start'))
-									yturl.query['start'] = $(elemYT).attr('start');
-								if ($(elemYT).attr('theme'))
-									yturl.query['theme'] = $(elemYT).attr('theme');
-							
-								player = akasha.partialSync("youtube-embed-code.html.ejs", {
-									idYouTube: id,
-									width: width,
-									height: height,
-									ytclass: _class,
-									style: style,
-									frameborder: "0",
-									yturl: url.format(yturl)
-								});
-							}
+							if (item) {
 						
-							if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
-								akasha.partial("youtube-embed.html.ejs", {
-									title: item ? item.snippet.title : "",
-									html: player,
-									author_url: item 
-											? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") 
-											: "",
-									author_name: item ? item.snippet.channelTitle : ""
-								}, function(err, embed) {
-									if (err) { logger.error(err); next(err); }
-									else {
-										$(elemYT).replaceWith(embed);
-										next();
-									}
-								});
-							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
-								$(elemYT).replaceWith(player);
-								next();
-							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
-								var thumbs = item ? item.snippet.thumbnails : undefined;
-								// if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
-								var align = $(elemYT).attr('align')
-									? $(elemYT).attr('align')
+								var width = $(elemYT).attr('width')
+									? $(elemYT).attr('width')
 									: undefined;
-								if (!width) width = "100%";
-								
-								akasha.partial("youtube-thumb.html.ejs", {
-									imgwidth: width,
-									imgalign: align,
-									imgclass: _class,
-									style: style,
-									imgurl: ytBestThumbnail(thumbs)
-								}, function(err, thumb) {
-									if (err) { logger.error(err); next(err); }
-									else {
-										// logger.trace('youtube-thumb '+ thumb);
-										$(elemYT).replaceWith(thumb);
-										next();
+								var height = $(elemYT).attr('height')
+									? $(elemYT).attr('height')
+									: undefined;
+								var _class = $(elemYT).attr('class')
+									? $(elemYT).attr('class')
+									: undefined;
+								var style = $(elemYT).attr('style')
+									? $(elemYT).attr('style')
+									: undefined;
+						
+								var player;
+								if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed') {
+									if (!width && !height) {
+										width = "480";
+										height = "270";
 									}
-								});
-							} else next(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
-                        } else next(new Error("No match for youtube id="+ id));
+							
+									var yturl = {
+										protocol: "http",
+										hostname: "www.youtube.com",
+										pathname: "/embed/"+ id,
+										query: []
+									};
+							
+									/* 
+									TODO update akashacms.com
+									TODO add a page of youtube embed examples
+							
+									TODO add new section to akashacms.com - layout examples - first is the youtube layout
+									*/
+								
+									// These options are explained here: https://developers.google.com/youtube/player_parameters
+
+									if ($(elemYT).attr('autohide'))
+										yturl.query['autohide'] = $(elemYT).attr('autohide');
+									if ($(elemYT).attr('autoplay'))
+										yturl.query['autoplay'] = $(elemYT).attr('autoplay');
+									if ($(elemYT).attr('cc_load_policy'))
+										yturl.query['cc_load_policy'] = $(elemYT).attr('cc_load_policy');
+									if ($(elemYT).attr('color'))
+										yturl.query['color'] = $(elemYT).attr('color');
+									if ($(elemYT).attr('controls'))
+										yturl.query['controls'] = $(elemYT).attr('controls');
+									if ($(elemYT).attr('disablekb'))
+										yturl.query['disablekb'] = $(elemYT).attr('disablekb');
+									if ($(elemYT).attr('enablejsapi'))
+										yturl.query['enablejsapi'] = $(elemYT).attr('enablejsapi');
+									if ($(elemYT).attr('end'))
+										yturl.query['end'] = $(elemYT).attr('end');
+									if ($(elemYT).attr('fs'))
+										yturl.query['fs'] = $(elemYT).attr('fs');
+									if ($(elemYT).attr('hl'))
+										yturl.query['hl'] = $(elemYT).attr('hl');
+									if ($(elemYT).attr('iv_load_policy'))
+										yturl.query['iv_load_policy'] = $(elemYT).attr('iv_load_policy');
+									if ($(elemYT).attr('list'))
+										yturl.query['list'] = $(elemYT).attr('list');
+									if ($(elemYT).attr('listType'))
+										yturl.query['listType'] = $(elemYT).attr('listType');
+									if ($(elemYT).attr('loop'))
+										yturl.query['loop'] = $(elemYT).attr('loop');
+									if ($(elemYT).attr('modestbranding'))
+										yturl.query['modestbranding'] = $(elemYT).attr('modestbranding');
+									if ($(elemYT).attr('origin'))
+										yturl.query['origin'] = $(elemYT).attr('origin');
+									if ($(elemYT).attr('playerapiid'))
+										yturl.query['playerapiid'] = $(elemYT).attr('playerapiid');
+									if ($(elemYT).attr('playlist'))
+										yturl.query['playlist'] = $(elemYT).attr('playlist');
+									if ($(elemYT).attr('playsinline'))
+										yturl.query['playsinline'] = $(elemYT).attr('playsinline');
+									if ($(elemYT).attr('rel'))
+										yturl.query['rel'] = $(elemYT).attr('rel');
+									if ($(elemYT).attr('showinfo'))
+										yturl.query['showinfo'] = $(elemYT).attr('showinfo');
+									if ($(elemYT).attr('start'))
+										yturl.query['start'] = $(elemYT).attr('start');
+									if ($(elemYT).attr('theme'))
+										yturl.query['theme'] = $(elemYT).attr('theme');
+							
+									player = akasha.partialSync("youtube-embed-code.html.ejs", {
+										idYouTube: id,
+										width: width,
+										height: height,
+										ytclass: _class,
+										style: style,
+										frameborder: "0",
+										yturl: url.format(yturl)
+									});
+								}
+						
+								if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
+									akasha.partial(template ? template : "youtube-embed.html.ejs", {
+										title: item ? item.snippet.title : "",
+										html: player,
+										author_url: item 
+												? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") 
+												: "",
+										author_name: item ? item.snippet.channelTitle : ""
+									}, function(err, embed) {
+										if (err) { logger.error(err); next(err); }
+										else {
+											$(elemYT).replaceWith(embed);
+											next();
+										}
+									});
+								} else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
+									$(elemYT).replaceWith(player);
+									next();
+								} else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
+									var thumbs = item ? item.snippet.thumbnails : undefined;
+									// if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
+									var align = $(elemYT).attr('align')
+										? $(elemYT).attr('align')
+										: undefined;
+									if (!width) width = "100%";
+								
+									akasha.partial(template ? template : "youtube-thumb.html.ejs", {
+										imgwidth: width,
+										imgalign: align,
+										imgclass: _class,
+										style: style,
+										imgurl: ytBestThumbnail(thumbs)
+									}, function(err, thumb) {
+										if (err) { logger.error(err); next(err); }
+										else {
+											// logger.trace('youtube-thumb '+ thumb);
+											$(elemYT).replaceWith(thumb);
+											next();
+										}
+									});
+								} else next(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
+							} else next(new Error("No match for youtube id="+ id));
+                        }
                     });
                 }
             }, function(err) {
@@ -365,6 +374,7 @@ module.exports.config = function(_akasha, config) {
             	vimeoData($(element).attr('url'), function(err, vdata) {
             		if (err) next(err);
             		else {
+            			var template = $(element).attr('template');
             			if (element.name === 'vimeo-player') {
             				$(element).replaceWith(vdata.html);
             				next();
@@ -386,7 +396,7 @@ module.exports.config = function(_akasha, config) {
 								? $(element).attr('align')
 								: undefined;
 								
-							akasha.partial("youtube-thumb.html.ejs", {
+							akasha.partial(template ? template : "youtube-thumb.html.ejs", {
 								imgwidth: width,
 								imgalign: align,
 								imgclass: _class,
