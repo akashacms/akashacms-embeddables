@@ -32,10 +32,13 @@ var akasha;
 var ytVidz = [];
 var ytVidInfo = function(id, done) {
     if (ytVidz[id]) {
+        // util.log('ytVidInfo id='+ id +' '+ util.inspect(ytVidz[id]));
         done(null, ytVidz[id]);
     } else {
         youtube.getById(id, function(resultData) {
+        	// util.log('ytVidInfo id='+ id +' '+ util.inspect(resultData));
         	if (resultData.error) {
+        		// trace.error(resultData.error.message);
         		done(new Error(resultData.error.message));
         	} else {
 				ytVidz[id] = resultData;
@@ -293,21 +296,25 @@ module.exports.config = function(_akasha, config) {
                 if (!id) {
                     next(new Error("No Youtube ID"));
                 } else {
-                    ytVidInfo(id, function(resultData) {
-                        var result = resultData;
-                        var item = result.items[0];
-                        var thumbs = item ? item.snippet.thumbnails : undefined;
-                        if (!item) {
-                        	next(new Error("Youtube didn't get anything for id="+ id));
-                        } else if ($('head').get(0)) {
-                            // Only do this substitution if we are on a completely rendered page
-                            $('head').append(
-                                '<meta property="og:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n' +
-                                '<meta name="twitter:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n'
-                            );
-                            $(elemYT).replaceWith('');
-                            next();
-                        } else next();
+                    ytVidInfo(id, function(err, resultData) {
+                    	if (err) next(err);
+                    	else {
+							var result = resultData;
+							// util.log(util.inspect(result));
+							var item = result && result.items && result.items.length >= 0 ? result.items[0] : null;
+							var thumbs = item ? item.snippet.thumbnails : undefined;
+							if (!item) {
+								next(new Error("(youtube-metadata) Youtube didn't get anything for id="+ id));
+							} else if ($('head').get(0)) {
+								// Only do this substitution if we are on a completely rendered page
+								$('head').append(
+									'<meta property="og:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n' +
+									'<meta name="twitter:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n'
+								);
+								$(elemYT).replaceWith('');
+								next();
+							} else next();
+                        }
                     });
                 }
             }, function(err) {
@@ -328,26 +335,29 @@ module.exports.config = function(_akasha, config) {
                 if (!id) {
                     next(new Error("No Youtube ID"));
                 } else {
-                    ytVidInfo(id, function(resultData) {
-                        var result = resultData;
-                        var item = result.items[0];
-                        
-                        if (item) {
-							if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
-								$(elemYT).replaceWith(item.snippet.title);
-								next();
-							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-author') {
-								$(elemYT).replaceWith(item.snippet.channelTitle);
-								next();
-							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-description') {
-								$(elemYT).replaceWith(item.snippet.description);
-								next();
-							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-publ-date') {
-								// TODO fix this to parse & print nicely
-								$(elemYT).replaceWith(item.snippet.publishedAt);
-								next();
-							} else next(new Error("failed to match -title or -author or -description "+ $(elemYT).name));
-						} else next(new Error("nothing found for youtube id="+ id));
+                    ytVidInfo(id, function(err, resultData) {
+                    	if (err) next(err);
+                    	else {
+							var result = resultData;
+							var item = result.items[0];
+						
+							if (item) {
+								if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
+									$(elemYT).replaceWith(item.snippet.title);
+									next();
+								} else if (elemYT.name /* .prop('tagName') */ === 'youtube-author') {
+									$(elemYT).replaceWith(item.snippet.channelTitle);
+									next();
+								} else if (elemYT.name /* .prop('tagName') */ === 'youtube-description') {
+									$(elemYT).replaceWith(item.snippet.description);
+									next();
+								} else if (elemYT.name /* .prop('tagName') */ === 'youtube-publ-date') {
+									// TODO fix this to parse & print nicely
+									$(elemYT).replaceWith(item.snippet.publishedAt);
+									next();
+								} else next(new Error("failed to match -title or -author or -description "+ $(elemYT).name));
+							} else next(new Error("nothing found for youtube id="+ id));
+						}
                     });
                 }
             }, function(err) {
