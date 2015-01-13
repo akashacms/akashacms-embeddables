@@ -1,0 +1,8 @@
+<%
+  if (typeof videoUrls !== "undefined" && videoUrls[0] && videoUrls[0].url) {
+  	if (videoUrls[0].url.match(/vimeo.com/)) {
+    	%><vimeo-thumbnail width="200" align="right" url="<%= videoUrls[0].url %>"/><%
+    } else if (videoUrls[0].url.match(/youtube.com/)) {
+    	%><youtube-thumbnail width="200" align="right" href="<%= videoUrls[0].url %>"/><%
+    }
+  } %>

@@ -1,0 +1,15 @@
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3><vimeo-title url="<%= vimeoUrl %>"/></h3>
+    </div>
+    <p>Source: Vimeo, by
+    <a href="<%= vimeoUrl %>" rel="nofollow"><vimeo-author url="<%= vimeoUrl %>"/></a> </p>
+    <% if (typeof hideDescription === "undefined" || ! hideDescription) {
+    		%><vimeo-description url="<%= vimeoUrl %>"></vimeo-description><%
+    	} %>
+    <div class="embed-responsive js-video" style="clear: both;">
+        <vimeo-player url="<%= vimeoUrl %>" />
+    </div>
+</div>
+
