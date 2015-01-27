@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2013-2014 David Herron
+ * Copyright 2013-2015 David Herron
  * 
  * This file is part of AkashaCMS-embeddables (http://akashacms.com/).
  *
@@ -522,17 +522,17 @@ module.exports.config = function(_akasha, config) {
             done();
         });
     }
-    /* config.funcs.googleDocsViewer = function(arg, callback) {
-    	throw new Error("Do not use googleDocsViewer");
+    /* */ config.funcs.googleDocsViewer = function(arg, callback) {
+    	// throw new Error("Do not use googleDocsViewer");
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
         var val = akasha.partialSync("google-doc-viewer.html.ejs", {
             docViewerUrl: generateGoogleDocViewerUrl(arg.documentUrl)
         });
         if (callback) callback(undefined, val);
         return val;
-    };
-    config.funcs.googleDocsViewLink = function(arg, callback) {
-    	throw new Error("Do not use googleDocsViewLink");
+    }; 
+    /* */ config.funcs.googleDocsViewLink = function(arg, callback) {
+    	// throw new Error("Do not use googleDocsViewLink");
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
         if (!arg.anchorText)   {
             if (arg.documentAnchorText) {
@@ -548,7 +548,7 @@ module.exports.config = function(_akasha, config) {
         if (callback) callback(undefined, val);
         return val;
     };
-    config.funcs.youtubePlayer = function(arg, callback) {
+    /* config.funcs.youtubePlayer = function(arg, callback) {
     	throw new Error("Do not use youtubePlayer");
         if (!callback)       { throw new Error("No callback given"); }
         if (!arg.youtubeUrl) { callback(new Error("No youtubeUrl given")); }
@@ -566,9 +566,9 @@ module.exports.config = function(_akasha, config) {
             anchorText: arg.anchorText
         });
         return val;
-    };
-    config.funcs.viewerJSViewer = function(arg, callback) {
-    	throw new Error("Do not use viewerJSViewer");
+    }; */
+    /*  config.funcs.viewerJSViewer = function(arg, callback) {
+    	// throw new Error("Do not use viewerJSViewer");
         if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
         if (!arg.template)   { arg.template = "viewerjs-embed.html.ejs"; }
         if (!arg.width)      { arg.width = "100%"; }
@@ -579,7 +579,7 @@ module.exports.config = function(_akasha, config) {
             height: arg.height
         });
         return val;
-    }; */
+    };  */
 };
 
 var generateGoogleDocViewerUrl = function(documentUrl) {
