@@ -50,14 +50,21 @@ var ytVidInfo = function(id, done) {
 
 var ytGetId = function($, elemYT) {
     var id;
-    if (elemYT && $(elemYT).attr('id')) {
+	var idFromUrl = function(href) {
+		var yturl = url.parse(href, true);
+        if (yturl.query && yturl.query.v) {
+            return yturl.query.v
+        } else {
+			return null;
+		}
+	};
+	if (typeof elemYT === 'string') {
+		return idFromUrl(elemYT);
+	} else if (elemYT && $(elemYT).attr('id')) {
         id = $(elemYT).attr('id');
     } else if (elemYT && $(elemYT).attr('href')) {
         var _yturl = $(elemYT).attr('href');
-        var yturl = url.parse(_yturl, true);
-        if (yturl.query && yturl.query.v) {
-            id = yturl.query.v
-        }
+		return idFromUrl(_yturl);
     }
     return id;
 };
@@ -74,6 +81,32 @@ var ytBestThumbnail = function(thumbs) {
     } else {
         return "";
     }
+};
+
+// http://apiblog.youtube.com/2009/10/oembed-support.html
+var youtubeOEmbedCache = [];
+var youtubeOEmbedData = function(url2request, done) {
+	if (youtubeOEmbedCache[url2request]) {
+		done(undefined, youtubeOEmbedCache[url2request]);
+	} else {
+		request(url.format({
+			protocol: 'http',
+			host: 'www.youtube.com',
+			pathname: '/oembed',
+			query: {
+				url: url2request,
+				format: "json"
+			}
+		}),
+		function(err, res, body) {
+			if (err) { logger.error(err); done(err); }
+			else {
+				// logger.trace(body);
+				youtubeOEmbedCache[url2request] = JSON.parse(body);
+				done(undefined, youtubeOEmbedCache[url2request]);
+			}
+		});
+	}
 };
 
 var vimeoCache = [];
@@ -96,6 +129,32 @@ var vimeoData = function(url2request, done) {
 				// logger.trace(body);
 				vimeoCache[url2request] = JSON.parse(body);
 				done(undefined, vimeoCache[url2request]);
+			}
+		});
+	}
+};
+
+// http://www.slideshare.net/developers/oembed
+var slideshareCache = [];
+var slideshareData = function(url2request, done) {
+	if (slideshareCache[url2request]) {
+		done(undefined, slideshareCache[url2request]);
+	} else {
+		request(url.format({
+			protocol: 'http',
+			host: 'www.slideshare.com',
+			pathname:	'/api/oembed/2',
+			query: {
+				url: url2request,
+				format: "json"
+			}
+		}),
+		function(err, res, body) {
+			if (err) { logger.error(err); done(err); }
+			else {
+				// logger.trace(body);
+				slideshareCache[url2request] = JSON.parse(body);
+				done(undefined, slideshareCache[url2request]);
 			}
 		});
 	}
@@ -440,6 +499,129 @@ module.exports.config = function(_akasha, config) {
             });
         });
         
+        config.mahabhuta.push(function($, metadata, dirty, done) {
+            var elements = [];
+        	$('video-embed-code').each(function(i, elem) { elements.push(elem); });
+            async.eachSeries(elements, function(element, next) {
+				var href = $(element).attr('href');
+				if (href.match(/youtube.com/i)) {
+					var id = ytGetId(null, href);
+					ytVidInfo(id, function(err, result) {
+						if (err) {
+							next(err);
+						} else {
+							var item = result.items && result.items.length >= 0 ? result.items[0] : null;
+							var thumbs = item ? item.snippet.thumbnails : undefined;
+							akasha.partial('video-embed-code.html.ejs', {
+								imgurl: ytBestThumbnail(thumbs),
+								linkurl: metadata.rendered_url,
+								linktext: item.snippet.title,
+								teaser: metadata.teaser ? metadata.teaser : item.snippet.description
+							}, function(err, embedCode) {
+								if (err) {
+									next(err);
+								} else {
+									akasha.partial('ak-show-embed-code.html.ejs', {
+										cols: 40,
+										rows: 3,
+										code: embedCode
+									}, function(err, embedder) {
+										if (err) {
+											next(err);
+										} else {
+											$(element).replaceWith(embedder);
+											next();
+										}
+									});
+								}
+							});
+						}
+					});
+				} else if (href.match(/vimeo.com/i)) {
+					vimeoData(href, function(err, vdata) {
+						if (err) {
+							next(err);
+						} else {
+							akasha.partial('video-embed-code.html.ejs', {
+								imgurl: vdata.thumbnail_url,
+								linkurl: metadata.rendered_url,
+								linktext: vdata.title,
+								teaser: metadata.teaser ? metadata.teaser : vdata.description
+							}, function(err, embedCode) {
+								if (err) {
+									next(err);
+								} else {
+									akasha.partial('ak-show-embed-code.html.ejs', {
+										cols: 40,
+										rows: 3,
+										code: embedCode
+									}, function(err, embedder) {
+										if (err) {
+											next(err);
+										} else {
+											$(element).replaceWith(embedder);
+											next();
+										}
+									});
+								}
+							});
+						}
+					});
+				} else {
+					next(new Error('unrecognized video URL '+ href));
+				}
+			},
+            function(err) {
+            	if (err) done(err); else done();
+            });
+		});
+		
+        config.mahabhuta.push(function($, metadata, dirty, done) {
+			// <slideshare-embed href=".."
+            var elements = [];
+        	$('slideshare-embed').each(function(i, elem) { elements.push(elem); });
+        	$('slideshare-metadata').each(function(i, elem) { elements.push(elem); });
+            async.eachSeries(elements, function(element, next) {
+				var href = $(element).attr('href');
+				slideshareData(href, function(err, result) {
+					if (err) next(err);
+					else {
+            			if (element.name === 'slideshare-embed') {
+							akasha.partial('slideshare-embed.html.ejs', {
+								title: result.title,
+								author_url: result.author_url,
+								author: result.author_name,
+								htmlEmbed: result.html,
+								slideshare_url: href
+							}, function(err, slideshow) {
+								if (err) {
+									next(err);
+								} else {
+									$(element).replaceWith(slideshow);
+									next();
+								}
+							});
+						} else if (element.name === 'slideshare-metadata') {
+							if ($('head').get(0)) {
+								// Only do this substitution if we are on a completely rendered page
+								$('head').append(
+									'<meta property="og:image" content="'+ result.thumbnail +'"/>\n' +
+									'<meta name="twitter:image" content="'+ result.thumbnail +'"/>\n'
+								);
+								$(element).replaceWith('');
+								next();
+							} else next();
+						} else {
+							next(new Error('unknown element '+ element.name));
+						}
+					}
+				});
+			},
+            function(err) {
+            	if (err) done(err); else done();
+            });
+        });
+		
         config.mahabhuta.push(function($, metadata, dirty, done) {
             // <oembed href="..." optional: template="..."/>
             logger.trace('oembed');
