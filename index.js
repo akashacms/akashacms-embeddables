@@ -630,16 +630,20 @@ module.exports.config = function(_akasha, config) {
             // util.log(util.inspect(elemsOE));
             async.eachSeries(elemsOE, function(elemOE, next) {
                 // util.log(util.inspect(elemOE));
-                akasha.oembedRender({
-                    template: $(elemOE).attr('template'),
-                    url: $(elemOE).attr("href")
-                }, function(err, html) {
-                    if (err) next(err);
-                    else { 
-                        $(elemOE).replaceWith(html);
-                        next();
-                    }
-                });
+				var url = $(elemOE).attr("href");
+				var template = $(elemOE).attr('template');
+                akasha.oembedData(url, function(err, results) {
+					if (err) next(err);
+					else {
+						akasha.partial(template, results, function(err, html) {
+							if (err) next(err);
+							else { 
+								$(elemOE).replaceWith(html);
+								next();
+							}
+						})
+					}
+				});
             }, function(err) {
                 if (err) done(err);
                 else done();
