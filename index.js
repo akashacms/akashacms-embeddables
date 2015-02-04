@@ -28,23 +28,64 @@ var youtube = new YouTube();
 
 var logger;
 var akasha;
+var config;
 
 var ytVidz = [];
-var ytVidInfo = function(id, done) {
+var ytVidInfo = module.exports.ytVidInfo = function(id, done) {
     if (ytVidz[id]) {
         // util.log('ytVidInfo id='+ id +' '+ util.inspect(ytVidz[id]));
         done(null, ytVidz[id]);
     } else {
-        youtube.getById(id, function(resultData) {
-        	// util.log('ytVidInfo id='+ id +' '+ util.inspect(resultData));
-        	if (resultData.error) {
-        		// trace.error(resultData.error.message);
-        		done(new Error(resultData.error.message));
-        	} else {
-				ytVidz[id] = resultData;
-				done(null, resultData);
-			}
-        });
+		if (config.embeddables && config.embeddables.youtubeKey) {
+			// If we have a youtubeKey then it's safe to call the youtube API
+			youtube.getById(id, function(resultData) {
+				// util.log('ytVidInfo id='+ id +' '+ util.inspect(resultData));
+				if (resultData.error) {
+					// trace.error(resultData.error.message);
+					done(new Error(resultData.error.message));
+				} else {
+					ytVidz[id] = resultData;
+					done(null, resultData);
+				}
+			});
+		} else {
+			// otherwise we call youtube's oEmbed API ... then deal with the limited returned data
+			youtubeOEmbedData(url.format({
+				protocol: 'https',
+				hostname: 'www.youtube.com',
+				pathname: '/watch',
+				query: {
+					v: id
+				}
+			}), function(err, results) {
+				if (err) done(err);
+				else {
+					// Construct a fake response as if we'd called the youtube API
+					done(null, {
+						oEmbedData: results,  // include the oEmbed data
+						kind: 'youtube#videoListResponse',
+						pageInfo: { totalResults: 1, resultsPerPage: 1 },
+						items: [ {
+							id: id,
+							kind: 'youtube#video',
+							snippet: {
+								title: results.title,
+								description: "",
+								thumbnails: {
+									"default": {
+										url: results.thumbnail_url,
+										width: results.thumbnail_width,
+										height: results.thumbnail_height
+									}
+								},
+								channelTitle: results.author_name,
+								publishedAt: ""
+							}
+						} ]
+					});
+				}
+			});
+		}
     }
 };
 
@@ -65,6 +106,9 @@ var ytGetId = function($, elemYT) {
     } else if (elemYT && $(elemYT).attr('href')) {
         var _yturl = $(elemYT).attr('href');
 		return idFromUrl(_yturl);
+    } else if (elemYT && $(elemYT).attr('url')) {
+        var _yturl = $(elemYT).attr('url');
+		return idFromUrl(_yturl);
     }
     return id;
 };
@@ -81,6 +125,101 @@ var ytBestThumbnail = function(thumbs) {
     } else {
         return "";
     }
+};
+
+
+var ytPlayerCode = function($, elemYT, id) {
+	
+	var width = $(elemYT).attr('width')
+		? $(elemYT).attr('width')
+		: undefined;
+	var height = $(elemYT).attr('height')
+		? $(elemYT).attr('height')
+		: undefined;
+	var _class = $(elemYT).attr('class')
+		? $(elemYT).attr('class')
+		: undefined;
+	var style = $(elemYT).attr('style')
+		? $(elemYT).attr('style')
+		: undefined;
+
+	if (!width && !height) {
+		width = "480";
+		height = "270";
+	}
+
+	var yturl = {
+		protocol: "http",
+		hostname: "www.youtube.com",
+		pathname: "/embed/"+ id,
+		query: []
+	};
+
+	/* 
+	TODO update akashacms.com
+	TODO add a page of youtube embed examples
+
+	TODO add new section to akashacms.com - layout examples - first is the youtube layout
+	*/
+
+	// These options are explained here: https://developers.google.com/youtube/player_parameters
+
+	if ($(elemYT).attr('autohide'))
+		yturl.query['autohide'] = $(elemYT).attr('autohide');
+	if ($(elemYT).attr('autoplay'))
+		yturl.query['autoplay'] = $(elemYT).attr('autoplay');
+	if ($(elemYT).attr('cc_load_policy'))
+		yturl.query['cc_load_policy'] = $(elemYT).attr('cc_load_policy');
+	if ($(elemYT).attr('color'))
+		yturl.query['color'] = $(elemYT).attr('color');
+	if ($(elemYT).attr('controls'))
+		yturl.query['controls'] = $(elemYT).attr('controls');
+	if ($(elemYT).attr('disablekb'))
+		yturl.query['disablekb'] = $(elemYT).attr('disablekb');
+	if ($(elemYT).attr('enablejsapi'))
+		yturl.query['enablejsapi'] = $(elemYT).attr('enablejsapi');
+	if ($(elemYT).attr('end'))
+		yturl.query['end'] = $(elemYT).attr('end');
+	if ($(elemYT).attr('fs'))
+		yturl.query['fs'] = $(elemYT).attr('fs');
+	if ($(elemYT).attr('hl'))
+		yturl.query['hl'] = $(elemYT).attr('hl');
+	if ($(elemYT).attr('iv_load_policy'))
+		yturl.query['iv_load_policy'] = $(elemYT).attr('iv_load_policy');
+	if ($(elemYT).attr('list'))
+		yturl.query['list'] = $(elemYT).attr('list');
+	if ($(elemYT).attr('listType'))
+		yturl.query['listType'] = $(elemYT).attr('listType');
+	if ($(elemYT).attr('loop'))
+		yturl.query['loop'] = $(elemYT).attr('loop');
+	if ($(elemYT).attr('modestbranding'))
+		yturl.query['modestbranding'] = $(elemYT).attr('modestbranding');
+	if ($(elemYT).attr('origin'))
+		yturl.query['origin'] = $(elemYT).attr('origin');
+	if ($(elemYT).attr('playerapiid'))
+		yturl.query['playerapiid'] = $(elemYT).attr('playerapiid');
+	if ($(elemYT).attr('playlist'))
+		yturl.query['playlist'] = $(elemYT).attr('playlist');
+	if ($(elemYT).attr('playsinline'))
+		yturl.query['playsinline'] = $(elemYT).attr('playsinline');
+	if ($(elemYT).attr('rel'))
+		yturl.query['rel'] = $(elemYT).attr('rel');
+	if ($(elemYT).attr('showinfo'))
+		yturl.query['showinfo'] = $(elemYT).attr('showinfo');
+	if ($(elemYT).attr('start'))
+		yturl.query['start'] = $(elemYT).attr('start');
+	if ($(elemYT).attr('theme'))
+		yturl.query['theme'] = $(elemYT).attr('theme');
+
+	return akasha.partialSync("youtube-embed-code.html.ejs", {
+		idYouTube: id,
+		width: width,
+		height: height,
+		ytclass: _class,
+		style: style,
+		frameborder: "0",
+		yturl: url.format(yturl)
+	});
 };
 
 // http://apiblog.youtube.com/2009/10/oembed-support.html
@@ -101,9 +240,13 @@ var youtubeOEmbedData = function(url2request, done) {
 		function(err, res, body) {
 			if (err) { logger.error(err); done(err); }
 			else {
-				// logger.trace(body);
-				youtubeOEmbedCache[url2request] = JSON.parse(body);
-				done(undefined, youtubeOEmbedCache[url2request]);
+				// util.log(body);
+				try {
+					youtubeOEmbedCache[url2request] = JSON.parse(body);
+					done(undefined, youtubeOEmbedCache[url2request]);
+				} catch (e) {
+					done(new Error('FAILURE '+ e +' on URL '+ url2request));
+				}
 			}
 		});
 	}
@@ -163,8 +306,9 @@ var slideshareData = function(url2request, done) {
 /**
  * Add ourselves to the config data.
  **/
-module.exports.config = function(_akasha, config) {
+module.exports.config = function(_akasha, _config) {
 	akasha = _akasha;
+	config = _config;
 	logger = akasha.getLogger("embeddables");
     config.root_partials.push(path.join(__dirname, 'partials'));
     config.root_assets.unshift(path.join(__dirname, 'assets'));
@@ -197,102 +341,11 @@ module.exports.config = function(_akasha, config) {
 							// var thumbs = item.snippet.thumbnails;
 							
 							var template = $(elemYT).attr('template');
+							var player;
 						
 							if (item) {
-						
-								var width = $(elemYT).attr('width')
-									? $(elemYT).attr('width')
-									: undefined;
-								var height = $(elemYT).attr('height')
-									? $(elemYT).attr('height')
-									: undefined;
-								var _class = $(elemYT).attr('class')
-									? $(elemYT).attr('class')
-									: undefined;
-								var style = $(elemYT).attr('style')
-									? $(elemYT).attr('style')
-									: undefined;
-						
-								var player;
-								if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed') {
-									if (!width && !height) {
-										width = "480";
-										height = "270";
-									}
-							
-									var yturl = {
-										protocol: "http",
-										hostname: "www.youtube.com",
-										pathname: "/embed/"+ id,
-										query: []
-									};
-							
-									/* 
-									TODO update akashacms.com
-									TODO add a page of youtube embed examples
-							
-									TODO add new section to akashacms.com - layout examples - first is the youtube layout
-									*/
-								
-									// These options are explained here: https://developers.google.com/youtube/player_parameters
-
-									if ($(elemYT).attr('autohide'))
-										yturl.query['autohide'] = $(elemYT).attr('autohide');
-									if ($(elemYT).attr('autoplay'))
-										yturl.query['autoplay'] = $(elemYT).attr('autoplay');
-									if ($(elemYT).attr('cc_load_policy'))
-										yturl.query['cc_load_policy'] = $(elemYT).attr('cc_load_policy');
-									if ($(elemYT).attr('color'))
-										yturl.query['color'] = $(elemYT).attr('color');
-									if ($(elemYT).attr('controls'))
-										yturl.query['controls'] = $(elemYT).attr('controls');
-									if ($(elemYT).attr('disablekb'))
-										yturl.query['disablekb'] = $(elemYT).attr('disablekb');
-									if ($(elemYT).attr('enablejsapi'))
-										yturl.query['enablejsapi'] = $(elemYT).attr('enablejsapi');
-									if ($(elemYT).attr('end'))
-										yturl.query['end'] = $(elemYT).attr('end');
-									if ($(elemYT).attr('fs'))
-										yturl.query['fs'] = $(elemYT).attr('fs');
-									if ($(elemYT).attr('hl'))
-										yturl.query['hl'] = $(elemYT).attr('hl');
-									if ($(elemYT).attr('iv_load_policy'))
-										yturl.query['iv_load_policy'] = $(elemYT).attr('iv_load_policy');
-									if ($(elemYT).attr('list'))
-										yturl.query['list'] = $(elemYT).attr('list');
-									if ($(elemYT).attr('listType'))
-										yturl.query['listType'] = $(elemYT).attr('listType');
-									if ($(elemYT).attr('loop'))
-										yturl.query['loop'] = $(elemYT).attr('loop');
-									if ($(elemYT).attr('modestbranding'))
-										yturl.query['modestbranding'] = $(elemYT).attr('modestbranding');
-									if ($(elemYT).attr('origin'))
-										yturl.query['origin'] = $(elemYT).attr('origin');
-									if ($(elemYT).attr('playerapiid'))
-										yturl.query['playerapiid'] = $(elemYT).attr('playerapiid');
-									if ($(elemYT).attr('playlist'))
-										yturl.query['playlist'] = $(elemYT).attr('playlist');
-									if ($(elemYT).attr('playsinline'))
-										yturl.query['playsinline'] = $(elemYT).attr('playsinline');
-									if ($(elemYT).attr('rel'))
-										yturl.query['rel'] = $(elemYT).attr('rel');
-									if ($(elemYT).attr('showinfo'))
-										yturl.query['showinfo'] = $(elemYT).attr('showinfo');
-									if ($(elemYT).attr('start'))
-										yturl.query['start'] = $(elemYT).attr('start');
-									if ($(elemYT).attr('theme'))
-										yturl.query['theme'] = $(elemYT).attr('theme');
-							
-									player = akasha.partialSync("youtube-embed-code.html.ejs", {
-										idYouTube: id,
-										width: width,
-										height: height,
-										ytclass: _class,
-										style: style,
-										frameborder: "0",
-										yturl: url.format(yturl)
-									});
-								}
+								if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed')
+									player = ytPlayerCode($, elemYT, id);
 						
 								if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
 									akasha.partial(template ? template : "youtube-embed.html.ejs", {
@@ -318,7 +371,18 @@ module.exports.config = function(_akasha, config) {
 									var align = $(elemYT).attr('align')
 										? $(elemYT).attr('align')
 										: undefined;
-									if (!width) width = "100%";
+									var width = $(elemYT).attr('width')
+										? $(elemYT).attr('width')
+										: "100%";
+									var height = $(elemYT).attr('height')
+										? $(elemYT).attr('height')
+										: undefined;
+									var _class = $(elemYT).attr('class')
+										? $(elemYT).attr('class')
+										: undefined;
+									var style = $(elemYT).attr('style')
+										? $(elemYT).attr('style')
+										: undefined;
 								
 									akasha.partial(template ? template : "youtube-thumb.html.ejs", {
 										imgwidth: width,
@@ -388,6 +452,7 @@ module.exports.config = function(_akasha, config) {
             $('youtube-author').each(function(i, elem) { elemsYT.push(elem); });
             $('youtube-description').each(function(i, elem) { elemsYT.push(elem); });
             $('youtube-publ-date').each(function(i, elem) { elemsYT.push(elem); });
+            $('framed-youtube-player').each(function(i, elem) { elemsYT.push(elem); });
             async.eachSeries(elemsYT, function(elemYT, next) {
                 logger.trace(elemYT.name);
                 var id = ytGetId($, elemYT);
@@ -414,6 +479,23 @@ module.exports.config = function(_akasha, config) {
 									// TODO fix this to parse & print nicely
 									$(elemYT).replaceWith(item.snippet.publishedAt);
 									next();
+								}  else if (elemYT.name /* .prop('tagName') */ === 'framed-youtube-player') {
+									akasha.partial('framed-youtube-player.html.ejs', {
+										youtubeUrl: $(elemYT).attr('url'),
+										title: item.snippet.title,
+										// authorUrl: ,
+										authorName: item.snippet.channelTitle,
+										publishedAt: item.snippet.publishedAt,
+										description: item.snippet.description,
+										embedCode: ytPlayerCode($, elemYT, id)
+									},
+									function(err, html) {
+										if (err) next(err);
+										else {
+											$(elemYT).replaceWith(html);
+											next();
+										}
+									});
 								} else next(new Error("failed to match -title or -author or -description "+ $(elemYT).name));
 							} else next(new Error("nothing found for youtube id="+ id));
 						}
@@ -434,6 +516,7 @@ module.exports.config = function(_akasha, config) {
         	
             var elements = [];
             $('vimeo-player').each(function(i, elem) { elements.push(elem); });
+            $('framed-vimeo-player').each(function(i, elem) { elements.push(elem); });
             $('vimeo-thumbnail').each(function(i, elem) { elements.push(elem); });
             $('vimeo-title').each(function(i, elem) { elements.push(elem); });
             $('vimeo-author').each(function(i, elem) { elements.push(elem); });
@@ -447,6 +530,22 @@ module.exports.config = function(_akasha, config) {
             			if (element.name === 'vimeo-player') {
             				$(element).replaceWith(vdata.html);
             				next();
+            			} else if (element.name === 'framed-vimeo-player') {
+							akasha.partial('framed-vimeo-player.html.ejs', {
+								vimeoUrl: $(element).attr('url'),
+								title: vdata.title,
+								// authorUrl: ,
+								authorName: vdata.author_name,
+								description: vdata.description,
+								embedCode: vdata.html
+							},
+							function(err, html) {
+								if (err) next(err);
+								else {
+									$(element).replaceWith(html);
+									next();
+								}
+							});
             			} else if (element.name === 'vimeo-thumbnail') {
             				
 							var width = $(element).attr('width')
@@ -766,6 +865,8 @@ module.exports.config = function(_akasha, config) {
         });
         return val;
     };  */
+	
+	return module.exports;
 };
 
 var generateGoogleDocViewerUrl = function(documentUrl) {
@@ -777,7 +878,7 @@ var generateGoogleDocViewerUrl = function(documentUrl) {
             url: documentUrl, embedded: true
         }
     });
-}
+};
 
 var generateViewerJSURL = function(docUrl) {
     if (docUrl.indexOf('http://') === 0 || docUrl.indexOf('https://') === 0) {
@@ -787,4 +888,4 @@ var generateViewerJSURL = function(docUrl) {
     } else {
         return "../../../"+ docUrl;
     }
-}
+};

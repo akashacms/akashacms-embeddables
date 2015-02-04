@@ -3,13 +3,13 @@
   if (typeof videoUrls !== "undefined") {
     videoUrls.forEach(function(videoData) {
     	if (videoData.url.match(/vimeo.com/)) { %>
-			<partial file-name='framed-vimeo-player.html.ejs' <%
+			<framed-vimeo-player <%
 				if (videoData.hideDescription) { %>data-hide-description='<%= videoData.hideDescription %>' <% }
-			%> data-vimeo-url='<%= videoData.url %>'></partial><%
+			%> url='<%= videoData.url %>'></framed-vimeo-player><%
 		} if (videoData.url.match(/youtube.com/)) { %>
-			<partial file-name='framed-youtube-player.html.ejs' <%
+			<framed-youtube-player autohide="1" modestbranding="0" rel="0" showinfo="1" iv_load_policy="3" <%
 				if (videoData.hideDescription) { %>data-hide-description='<%= videoData.hideDescription %>' <% }
-			%> data-youtube-url='<%= videoData.url %>'></partial><%
+			%> url='<%= videoData.url %>'></framed-youtube-player><%
 		}
     })
   } %>

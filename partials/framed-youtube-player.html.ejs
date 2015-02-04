@@ -1,16 +1,14 @@
 
 <div class="framed-video-player">
-    <h3><youtube-title href="<%= youtubeUrl %>"/></h3>
+    <h3><%= title %></h3>
     <p>Source: Youtube, by
-    <a href="<%= youtubeUrl %>" rel="nofollow"><youtube-author href="<%= youtubeUrl %>"/></a>
-    on <youtube-publ-date  href="<%= youtubeUrl %>"/></p>
+    <a href="<%= youtubeUrl %>" rel="nofollow"><%= authorName %></a>
+    on <%= publishedAt %></p>
     <% if (typeof hideDescription === "undefined" || ! hideDescription) {
-    		%><youtube-description href="<%= youtubeUrl %>"></youtube-description><%
+    		%><%= description %><%
     	} %>
     <div class="embed-responsive js-video" style="clear: both;">
-        <youtube-video-embed href="<%= youtubeUrl %>"
-            autohide="1" modestbranding="0" rel="0" showinfo="1" iv_load_policy="3"
-            />
+        <%- embedCode %>
     </div>
 </div>
 
