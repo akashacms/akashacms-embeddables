@@ -31,7 +31,7 @@ var akasha;
 var config;
 
 var ytVidz = [];
-var ytVidInfo = module.exports.ytVidInfo = function(id, done) {
+var ytVidInfo = module.exports.youtubeVidInfo = function(id, done) {
     if (ytVidz[id]) {
         // util.log('ytVidInfo id='+ id +' '+ util.inspect(ytVidz[id]));
         done(null, ytVidz[id]);
@@ -224,7 +224,7 @@ var ytPlayerCode = function($, elemYT, id) {
 
 // http://apiblog.youtube.com/2009/10/oembed-support.html
 var youtubeOEmbedCache = [];
-var youtubeOEmbedData = function(url2request, done) {
+var youtubeOEmbedData = module.exports.youtubeOEmbedData = function(url2request, done) {
 	if (youtubeOEmbedCache[url2request]) {
 		done(undefined, youtubeOEmbedCache[url2request]);
 	} else {
@@ -253,7 +253,7 @@ var youtubeOEmbedData = function(url2request, done) {
 };
 
 var vimeoCache = [];
-var vimeoData = function(url2request, done) {
+var vimeoData = module.exports.vimeoData = function(url2request, done) {
 	// logger.trace('vimeoData '+ url2request);
 	if (vimeoCache[url2request]) {
 		done(undefined, vimeoCache[url2request]);
@@ -279,7 +279,7 @@ var vimeoData = function(url2request, done) {
 
 // http://www.slideshare.net/developers/oembed
 var slideshareCache = [];
-var slideshareData = function(url2request, done) {
+var slideshareData = module.exports.slideshareData = function(url2request, done) {
 	if (slideshareCache[url2request]) {
 		done(undefined, slideshareCache[url2request]);
 	} else {
@@ -317,496 +317,6 @@ module.exports.config = function(_akasha, _config) {
         youtube.setKey(config.embeddables.youtubeKey);
     }
     
-    if (config.mahabhuta) {
-        config.mahabhuta.push(function($, metadata, dirty, done) {
-            // <youtube-video href=".."/>  TBD: autoplay, thumbnail+lightbox
-            var elemsYT = [];
-            $('youtube-video').each(function(i, elem) { elemsYT.push(elem); });
-            $('youtube-video-embed').each(function(i, elem) { elemsYT.push(elem); });
-            $('youtube-thumbnail').each(function(i, elem) { elemsYT.push(elem); });
-            // util.log(util.inspect(elemsYT));
-            async.eachSeries(elemsYT, function(elemYT, next) {
-                // util.log(util.inspect(elemYT));
-                
-                logger.trace(elemYT.name);
-                var id = ytGetId($, elemYT);
-                if (!id) {
-                    next(new Error("No Youtube ID"));
-                } else {
-                    ytVidInfo(id, function(err, resultData) {
-                    	if (err) next(err);
-                    	else {
-							var result = resultData;
-							var item = result.items && result.items.length >= 0 ? result.items[0] : null;
-							// var thumbs = item.snippet.thumbnails;
-							
-							var template = $(elemYT).attr('template');
-							var player;
-						
-							if (item) {
-								if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed')
-									player = ytPlayerCode($, elemYT, id);
-						
-								if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
-									akasha.partial(template ? template : "youtube-embed.html.ejs", {
-										title: item ? item.snippet.title : "",
-										html: player,
-										author_url: item 
-												? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") 
-												: "",
-										author_name: item ? item.snippet.channelTitle : ""
-									}, function(err, embed) {
-										if (err) { logger.error(err); next(err); }
-										else {
-											$(elemYT).replaceWith(embed);
-											next();
-										}
-									});
-								} else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
-									$(elemYT).replaceWith(player);
-									next();
-								} else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
-									var thumbs = item ? item.snippet.thumbnails : undefined;
-									// if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
-									var align = $(elemYT).attr('align')
-										? $(elemYT).attr('align')
-										: undefined;
-									var width = $(elemYT).attr('width')
-										? $(elemYT).attr('width')
-										: "100%";
-									var height = $(elemYT).attr('height')
-										? $(elemYT).attr('height')
-										: undefined;
-									var _class = $(elemYT).attr('class')
-										? $(elemYT).attr('class')
-										: undefined;
-									var style = $(elemYT).attr('style')
-										? $(elemYT).attr('style')
-										: undefined;
-								
-									akasha.partial(template ? template : "youtube-thumb.html.ejs", {
-										imgwidth: width,
-										imgalign: align,
-										imgclass: _class,
-										style: style,
-										imgurl: ytBestThumbnail(thumbs)
-									}, function(err, thumb) {
-										if (err) { logger.error(err); next(err); }
-										else {
-											// logger.trace('youtube-thumb '+ thumb);
-											$(elemYT).replaceWith(thumb);
-											next();
-										}
-									});
-								} else next(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
-							} else next(new Error("No match for youtube id="+ id));
-                        }
-                    });
-                }
-            }, function(err) {
-                if (err) done(err);
-                else done();
-            });
-        });
-        
-        config.mahabhuta.push(function($, metadata, dirty, done) {
-            // <youtube-metadata id="" href=".."/>  
-            var elemsYT = [];
-            $('youtube-metadata').each(function(i, elem) { elemsYT[i] = elem; });
-            async.eachSeries(elemsYT, function(elemYT, next) {
-                logger.trace(elemYT.name);
-                var id = ytGetId($, elemYT);
-                if (!id) {
-                    next(new Error("No Youtube ID"));
-                } else {
-                    ytVidInfo(id, function(err, resultData) {
-                    	if (err) next(err);
-                    	else {
-							var result = resultData;
-							// util.log(util.inspect(result));
-							var item = result && result.items && result.items.length >= 0 ? result.items[0] : null;
-							var thumbs = item ? item.snippet.thumbnails : undefined;
-							if (!item) {
-								next(new Error("(youtube-metadata) Youtube didn't get anything for id="+ id));
-							} else if ($('head').get(0)) {
-								// Only do this substitution if we are on a completely rendered page
-								$('head').append(
-									'<meta property="og:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n' +
-									'<meta name="twitter:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n'
-								);
-								$(elemYT).replaceWith('');
-								next();
-							} else next();
-                        }
-                    });
-                }
-            }, function(err) {
-                if (err) done(err);
-                else done();
-            });
-        });
-        config.mahabhuta.push(function($, metadata, dirty, done) {
-            // <youtube-title id="" href=".."/>  
-            var elemsYT = [];
-            $('youtube-title').each(function(i, elem) { elemsYT.push(elem); });
-            $('youtube-author').each(function(i, elem) { elemsYT.push(elem); });
-            $('youtube-description').each(function(i, elem) { elemsYT.push(elem); });
-            $('youtube-publ-date').each(function(i, elem) { elemsYT.push(elem); });
-            $('framed-youtube-player').each(function(i, elem) { elemsYT.push(elem); });
-            async.eachSeries(elemsYT, function(elemYT, next) {
-                logger.trace(elemYT.name);
-                var id = ytGetId($, elemYT);
-                if (!id) {
-                    next(new Error("No Youtube ID"));
-                } else {
-                    ytVidInfo(id, function(err, resultData) {
-                    	if (err) next(err);
-                    	else {
-							var result = resultData;
-							var item = result.items[0];
-						
-							if (item) {
-								if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
-									$(elemYT).replaceWith(item.snippet.title);
-									next();
-								} else if (elemYT.name /* .prop('tagName') */ === 'youtube-author') {
-									$(elemYT).replaceWith(item.snippet.channelTitle);
-									next();
-								} else if (elemYT.name /* .prop('tagName') */ === 'youtube-description') {
-									$(elemYT).replaceWith(item.snippet.description);
-									next();
-								} else if (elemYT.name /* .prop('tagName') */ === 'youtube-publ-date') {
-									// TODO fix this to parse & print nicely
-									$(elemYT).replaceWith(item.snippet.publishedAt);
-									next();
-								}  else if (elemYT.name /* .prop('tagName') */ === 'framed-youtube-player') {
-									akasha.partial('framed-youtube-player.html.ejs', {
-										youtubeUrl: $(elemYT).attr('url'),
-										title: item.snippet.title,
-										// authorUrl: ,
-										authorName: item.snippet.channelTitle,
-										publishedAt: item.snippet.publishedAt,
-										description: item.snippet.description,
-										embedCode: ytPlayerCode($, elemYT, id)
-									},
-									function(err, html) {
-										if (err) next(err);
-										else {
-											$(elemYT).replaceWith(html);
-											next();
-										}
-									});
-								} else next(new Error("failed to match -title or -author or -description "+ $(elemYT).name));
-							} else next(new Error("nothing found for youtube id="+ id));
-						}
-                    });
-                }
-            }, function(err) {
-                if (err) done(err);
-                else done();
-            });
-        });
-        
-        config.mahabhuta.push(function($, metadata, dirty, done) {
-        	// <vimeo-player url="..." />
-        	// <vimeo-thumb url="..." />
-        	// <vimeo-title url="..." />
-        	// <vimeo-author url="..." />
-        	// <vimeo-description url="..." />
-        	
-            var elements = [];
-            $('vimeo-player').each(function(i, elem) { elements.push(elem); });
-            $('framed-vimeo-player').each(function(i, elem) { elements.push(elem); });
-            $('vimeo-thumbnail').each(function(i, elem) { elements.push(elem); });
-            $('vimeo-title').each(function(i, elem) { elements.push(elem); });
-            $('vimeo-author').each(function(i, elem) { elements.push(elem); });
-            $('vimeo-description').each(function(i, elem) { elements.push(elem); });
-            async.eachSeries(elements, function(element, next) {
-            	logger.trace(element.name);
-            	vimeoData($(element).attr('url'), function(err, vdata) {
-            		if (err) next(err);
-            		else {
-            			var template = $(element).attr('template');
-            			if (element.name === 'vimeo-player') {
-            				$(element).replaceWith(vdata.html);
-            				next();
-            			} else if (element.name === 'framed-vimeo-player') {
-							akasha.partial('framed-vimeo-player.html.ejs', {
-								vimeoUrl: $(element).attr('url'),
-								title: vdata.title,
-								// authorUrl: ,
-								authorName: vdata.author_name,
-								description: vdata.description,
-								embedCode: vdata.html
-							},
-							function(err, html) {
-								if (err) next(err);
-								else {
-									$(element).replaceWith(html);
-									next();
-								}
-							});
-            			} else if (element.name === 'vimeo-thumbnail') {
-            				
-							var width = $(element).attr('width')
-								? $(element).attr('width')
-								: undefined;
-							var height = $(element).attr('height')
-								? $(element).attr('height')
-								: undefined;
-							var _class = $(element).attr('class')
-								? $(element).attr('class')
-								: undefined;
-							var style = $(element).attr('style')
-								? $(element).attr('style')
-								: undefined;
-							var align = $(element).attr('align')
-								? $(element).attr('align')
-								: undefined;
-								
-							akasha.partial(template ? template : "youtube-thumb.html.ejs", {
-								imgwidth: width,
-								imgalign: align,
-								imgclass: _class,
-								style: style,
-								imgurl: vdata.thumbnail_url
-							}, function(err, thumb) {
-								if (err) { logger.error(err); next(err); }
-								else {
-									// logger.trace('vimeo-thumbnail '+ thumb);
-									$(element).replaceWith(thumb);
-									next();
-								}
-							});
-            			} else if (element.name === 'vimeo-title') {
-            				$(element).replaceWith(vdata.title);
-            				next();
-            			} else if (element.name === 'vimeo-author') {
-            				$(element).replaceWith(vdata.author_name);
-            				next();
-            			} else if (element.name === 'vimeo-description') {
-            				$(element).replaceWith(vdata.description);
-            				next();
-            			} else {
-            				next();
-            			}
-            		}
-            	});
-            },
-            function(err) {
-            	if (err) done(err); else done();
-            });
-        });
-        
-        config.mahabhuta.push(function($, metadata, dirty, done) {
-            var elements = [];
-        	$('video-embed-code').each(function(i, elem) { elements.push(elem); });
-            async.eachSeries(elements, function(element, next) {
-				var href = $(element).attr('href');
-				if (href.match(/youtube.com/i)) {
-					var id = ytGetId(null, href);
-					ytVidInfo(id, function(err, result) {
-						if (err) {
-							next(err);
-						} else {
-							var item = result.items && result.items.length >= 0 ? result.items[0] : null;
-							var thumbs = item ? item.snippet.thumbnails : undefined;
-							akasha.partial('video-embed-code.html.ejs', {
-								imgurl: ytBestThumbnail(thumbs),
-								linkurl: metadata.rendered_url,
-								linktext: item.snippet.title,
-								teaser: metadata.teaser ? metadata.teaser : item.snippet.description
-							}, function(err, embedCode) {
-								if (err) {
-									next(err);
-								} else {
-									akasha.partial('ak-show-embed-code.html.ejs', {
-										cols: 40,
-										rows: 3,
-										code: embedCode
-									}, function(err, embedder) {
-										if (err) {
-											next(err);
-										} else {
-											$(element).replaceWith(embedder);
-											next();
-										}
-									});
-								}
-							});
-						}
-					});
-				} else if (href.match(/vimeo.com/i)) {
-					vimeoData(href, function(err, vdata) {
-						if (err) {
-							next(err);
-						} else {
-							akasha.partial('video-embed-code.html.ejs', {
-								imgurl: vdata.thumbnail_url,
-								linkurl: metadata.rendered_url,
-								linktext: vdata.title,
-								teaser: metadata.teaser ? metadata.teaser : vdata.description
-							}, function(err, embedCode) {
-								if (err) {
-									next(err);
-								} else {
-									akasha.partial('ak-show-embed-code.html.ejs', {
-										cols: 40,
-										rows: 3,
-										code: embedCode
-									}, function(err, embedder) {
-										if (err) {
-											next(err);
-										} else {
-											$(element).replaceWith(embedder);
-											next();
-										}
-									});
-								}
-							});
-						}
-					});
-				} else {
-					next(new Error('unrecognized video URL '+ href));
-				}
-			},
-            function(err) {
-            	if (err) done(err); else done();
-            });
-		});
-		
-        config.mahabhuta.push(function($, metadata, dirty, done) {
-			// <slideshare-embed href=".."
-            var elements = [];
-        	$('slideshare-embed').each(function(i, elem) { elements.push(elem); });
-        	$('slideshare-metadata').each(function(i, elem) { elements.push(elem); });
-            async.eachSeries(elements, function(element, next) {
-				var href = $(element).attr('href');
-				slideshareData(href, function(err, result) {
-					if (err) next(err);
-					else {
-            			if (element.name === 'slideshare-embed') {
-							akasha.partial('slideshare-embed.html.ejs', {
-								title: result.title,
-								author_url: result.author_url,
-								author: result.author_name,
-								htmlEmbed: result.html,
-								slideshare_url: href
-							}, function(err, slideshow) {
-								if (err) {
-									next(err);
-								} else {
-									$(element).replaceWith(slideshow);
-									next();
-								}
-							});
-						} else if (element.name === 'slideshare-metadata') {
-							if ($('head').get(0)) {
-								// Only do this substitution if we are on a completely rendered page
-								$('head').append(
-									'<meta property="og:image" content="'+ result.thumbnail +'"/>\n' +
-									'<meta name="twitter:image" content="'+ result.thumbnail +'"/>\n'
-								);
-								$(element).replaceWith('');
-								next();
-							} else next();
-						} else {
-							next(new Error('unknown element '+ element.name));
-						}
-					}
-				});
-			},
-            function(err) {
-            	if (err) done(err); else done();
-            });
-        });
-		
-        config.mahabhuta.push(function($, metadata, dirty, done) {
-            // <oembed href="..." optional: template="..."/>
-            logger.trace('oembed');
-            var elemsOE = [];
-            $('oembed').each(function(i, elem) { elemsOE[i] = elem; });
-            // util.log(util.inspect(elemsOE));
-            async.eachSeries(elemsOE, function(elemOE, next) {
-                // util.log(util.inspect(elemOE));
-				var url = $(elemOE).attr("href");
-				var template = $(elemOE).attr('template');
-                akasha.oembedData(url, function(err, results) {
-					if (err) next(err);
-					else {
-						akasha.partial(template, results, function(err, html) {
-							if (err) next(err);
-							else { 
-								$(elemOE).replaceWith(html);
-								next();
-							}
-						})
-					}
-				});
-            }, function(err) {
-                if (err) done(err);
-                else done();
-            });
-        });
-        
-        config.mahabhuta.push(function($, metadata, dirty, done) {
-            var href, width, height;
-            // <googledocs-viewer href="..." />
-            $('googledocs-viewer').each(function(i, elem) {
-                href = $(this).attr("href");
-                if (!href) done(new Error("URL required for googledocs-viewer"));
-                else {
-                	$(this).replaceWith(
-						akasha.partialSync("google-doc-viewer.html.ejs", {
-							docViewerUrl: generateGoogleDocViewerUrl(href)
-						})
-                	);
-                }
-            });
-            // <googledocs-view-link href="..." >Anchor Text</googledocs-view-link>
-            $('googledocs-view-link').each(function(i, elem) {
-                href = $(this).attr("href");
-                if (!href) return done(new Error("URL required for googledocs-view-link"));
-                var anchorText = $(this).text();
-                if (!anchorText) anchorText = "Click Here";
-                return $(this).replaceWith(
-                    akasha.partialSync("google-doc-viewer-link.html.ejs", {
-                        docViewerUrl: generateGoogleDocViewerUrl(href),
-                        anchorText: anchorText
-                    })
-                );
-            });
-            // <docviewer href="..." width="..." height="..."/>
-            $('docviewer').each(function(i, elem) {
-                href = $(this).attr("href");
-                if (!href) return done(new Error("URL required for docviewer"));
-                width = $(this).attr("width");
-                if (!width) width = "100%";
-                height = $(this).attr("height");
-                if (!height) height = "900px";
-                return $(this).replaceWith(
-                    akasha.partialSync("viewerjs-embed.html.ejs", {
-                        docUrl: generateViewerJSURL(href),
-                        width: width, height: height
-                    })
-                );
-            });
-            // <docviewer-link href="..." >Anchor Text</docviewer-link>
-            $('docviewer-link').each(function(i, elem) {
-                href = $(this).attr("href");
-                if (!href) return done(new Error("URL required for docviewer"));
-                var anchorText = $(this).text();
-                if (!anchorText) anchorText = "Click Here";
-                return $(this).replaceWith(
-                    akasha.partialSync("viewerjs-link.html.ejs", {
-                        docUrl: generateViewerJSURL(href),
-                        anchorText: anchorText
-                    })
-                );
-            });
-            done();
-        });
-    }
     /* */ config.funcs.googleDocsViewer = function(arg, callback) {
     	// throw new Error("Do not use googleDocsViewer");
         if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
@@ -889,3 +399,496 @@ var generateViewerJSURL = function(docUrl) {
         return "../../../"+ docUrl;
     }
 };
+
+module.exports.mahabhuta = [
+	
+	function($, metadata, dirty, done) {
+		// <youtube-video href=".."/>  TBD: autoplay, thumbnail+lightbox
+		var elemsYT = [];
+		$('youtube-video').each(function(i, elem) { elemsYT.push(elem); });
+		$('youtube-video-embed').each(function(i, elem) { elemsYT.push(elem); });
+		$('youtube-thumbnail').each(function(i, elem) { elemsYT.push(elem); });
+		// util.log(util.inspect(elemsYT));
+		async.eachSeries(elemsYT, function(elemYT, next) {
+			// util.log(util.inspect(elemYT));
+			
+			logger.trace(elemYT.name);
+			var id = ytGetId($, elemYT);
+			if (!id) {
+				next(new Error("No Youtube ID"));
+			} else {
+				ytVidInfo(id, function(err, resultData) {
+					if (err) next(err);
+					else {
+						var result = resultData;
+						var item = result.items && result.items.length >= 0 ? result.items[0] : null;
+						// var thumbs = item.snippet.thumbnails;
+						
+						var template = $(elemYT).attr('template');
+						var player;
+					
+						if (item) {
+							if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed')
+								player = ytPlayerCode($, elemYT, id);
+					
+							if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
+								akasha.partial(template ? template : "youtube-embed.html.ejs", {
+									title: item ? item.snippet.title : "",
+									html: player,
+									author_url: item 
+											? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") 
+											: "",
+									author_name: item ? item.snippet.channelTitle : ""
+								}, function(err, embed) {
+									if (err) { logger.error(err); next(err); }
+									else {
+										$(elemYT).replaceWith(embed);
+										next();
+									}
+								});
+							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
+								$(elemYT).replaceWith(player);
+								next();
+							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
+								var thumbs = item ? item.snippet.thumbnails : undefined;
+								// if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
+								var align = $(elemYT).attr('align')
+									? $(elemYT).attr('align')
+									: undefined;
+								var width = $(elemYT).attr('width')
+									? $(elemYT).attr('width')
+									: "100%";
+								var height = $(elemYT).attr('height')
+									? $(elemYT).attr('height')
+									: undefined;
+								var _class = $(elemYT).attr('class')
+									? $(elemYT).attr('class')
+									: undefined;
+								var style = $(elemYT).attr('style')
+									? $(elemYT).attr('style')
+									: undefined;
+							
+								akasha.partial(template ? template : "youtube-thumb.html.ejs", {
+									imgwidth: width,
+									imgalign: align,
+									imgclass: _class,
+									style: style,
+									imgurl: ytBestThumbnail(thumbs)
+								}, function(err, thumb) {
+									if (err) { logger.error(err); next(err); }
+									else {
+										// logger.trace('youtube-thumb '+ thumb);
+										$(elemYT).replaceWith(thumb);
+										next();
+									}
+								});
+							} else next(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
+						} else next(new Error("No match for youtube id="+ id));
+					}
+				});
+			}
+		}, function(err) {
+			if (err) done(err);
+			else done();
+		});
+	},
+	
+	function($, metadata, dirty, done) {
+		// <youtube-metadata id="" href=".."/>  
+		var elemsYT = [];
+		$('youtube-metadata').each(function(i, elem) { elemsYT[i] = elem; });
+		async.eachSeries(elemsYT, function(elemYT, next) {
+			logger.trace(elemYT.name);
+			var id = ytGetId($, elemYT);
+			if (!id) {
+				next(new Error("No Youtube ID"));
+			} else {
+				ytVidInfo(id, function(err, resultData) {
+					if (err) next(err);
+					else {
+						var result = resultData;
+						// util.log(util.inspect(result));
+						var item = result && result.items && result.items.length >= 0 ? result.items[0] : null;
+						var thumbs = item ? item.snippet.thumbnails : undefined;
+						if (!item) {
+							next(new Error("(youtube-metadata) Youtube didn't get anything for id="+ id));
+						} else if ($('head').get(0)) {
+							// Only do this substitution if we are on a completely rendered page
+							$('head').append(
+								'<meta property="og:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n' +
+								'<meta name="twitter:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n'
+							);
+							$(elemYT).replaceWith('');
+							next();
+						} else next();
+					}
+				});
+			}
+		}, function(err) {
+			if (err) done(err);
+			else done();
+		});
+	},
+	
+	function($, metadata, dirty, done) {
+		// <youtube-title id="" href=".."/>  
+		var elemsYT = [];
+		$('youtube-title').each(function(i, elem) { elemsYT.push(elem); });
+		$('youtube-author').each(function(i, elem) { elemsYT.push(elem); });
+		$('youtube-description').each(function(i, elem) { elemsYT.push(elem); });
+		$('youtube-publ-date').each(function(i, elem) { elemsYT.push(elem); });
+		$('framed-youtube-player').each(function(i, elem) { elemsYT.push(elem); });
+		async.eachSeries(elemsYT, function(elemYT, next) {
+			logger.trace(elemYT.name);
+			var id = ytGetId($, elemYT);
+			if (!id) {
+				next(new Error("No Youtube ID"));
+			} else {
+				ytVidInfo(id, function(err, resultData) {
+					if (err) next(err);
+					else {
+						var result = resultData;
+						var item = result.items[0];
+					
+						if (item) {
+							if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
+								$(elemYT).replaceWith(item.snippet.title);
+								next();
+							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-author') {
+								$(elemYT).replaceWith(item.snippet.channelTitle);
+								next();
+							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-description') {
+								$(elemYT).replaceWith(item.snippet.description);
+								next();
+							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-publ-date') {
+								// TODO fix this to parse & print nicely
+								$(elemYT).replaceWith(item.snippet.publishedAt);
+								next();
+							}  else if (elemYT.name /* .prop('tagName') */ === 'framed-youtube-player') {
+								akasha.partial('framed-youtube-player.html.ejs', {
+									youtubeUrl: $(elemYT).attr('url'),
+									title: item.snippet.title,
+									// authorUrl: ,
+									authorName: item.snippet.channelTitle,
+									publishedAt: item.snippet.publishedAt,
+									description: item.snippet.description,
+									embedCode: ytPlayerCode($, elemYT, id)
+								},
+								function(err, html) {
+									if (err) next(err);
+									else {
+										$(elemYT).replaceWith(html);
+										next();
+									}
+								});
+							} else next(new Error("failed to match -title or -author or -description "+ $(elemYT).name));
+						} else next(new Error("nothing found for youtube id="+ id));
+					}
+				});
+			}
+		}, function(err) {
+			if (err) done(err);
+			else done();
+		});
+	},
+	
+	function($, metadata, dirty, done) {
+		// <vimeo-player url="..." />
+		// <vimeo-thumb url="..." />
+		// <vimeo-title url="..." />
+		// <vimeo-author url="..." />
+		// <vimeo-description url="..." />
+		
+		var elements = [];
+		$('vimeo-player').each(function(i, elem) { elements.push(elem); });
+		$('framed-vimeo-player').each(function(i, elem) { elements.push(elem); });
+		$('vimeo-thumbnail').each(function(i, elem) { elements.push(elem); });
+		$('vimeo-title').each(function(i, elem) { elements.push(elem); });
+		$('vimeo-author').each(function(i, elem) { elements.push(elem); });
+		$('vimeo-description').each(function(i, elem) { elements.push(elem); });
+		async.eachSeries(elements, function(element, next) {
+			logger.trace(element.name);
+			vimeoData($(element).attr('url'), function(err, vdata) {
+				if (err) next(err);
+				else {
+					var template = $(element).attr('template');
+					if (element.name === 'vimeo-player') {
+						$(element).replaceWith(vdata.html);
+						next();
+					} else if (element.name === 'framed-vimeo-player') {
+						akasha.partial('framed-vimeo-player.html.ejs', {
+							vimeoUrl: $(element).attr('url'),
+							title: vdata.title,
+							// authorUrl: ,
+							authorName: vdata.author_name,
+							description: vdata.description,
+							embedCode: vdata.html
+						},
+						function(err, html) {
+							if (err) next(err);
+							else {
+								$(element).replaceWith(html);
+								next();
+							}
+						});
+					} else if (element.name === 'vimeo-thumbnail') {
+						
+						var width = $(element).attr('width')
+							? $(element).attr('width')
+							: undefined;
+						var height = $(element).attr('height')
+							? $(element).attr('height')
+							: undefined;
+						var _class = $(element).attr('class')
+							? $(element).attr('class')
+							: undefined;
+						var style = $(element).attr('style')
+							? $(element).attr('style')
+							: undefined;
+						var align = $(element).attr('align')
+							? $(element).attr('align')
+							: undefined;
+							
+						akasha.partial(template ? template : "youtube-thumb.html.ejs", {
+							imgwidth: width,
+							imgalign: align,
+							imgclass: _class,
+							style: style,
+							imgurl: vdata.thumbnail_url
+						}, function(err, thumb) {
+							if (err) { logger.error(err); next(err); }
+							else {
+								// logger.trace('vimeo-thumbnail '+ thumb);
+								$(element).replaceWith(thumb);
+								next();
+							}
+						});
+					} else if (element.name === 'vimeo-title') {
+						$(element).replaceWith(vdata.title);
+						next();
+					} else if (element.name === 'vimeo-author') {
+						$(element).replaceWith(vdata.author_name);
+						next();
+					} else if (element.name === 'vimeo-description') {
+						$(element).replaceWith(vdata.description);
+						next();
+					} else {
+						next();
+					}
+				}
+			});
+		},
+		function(err) {
+			if (err) done(err); else done();
+		});
+	},
+	
+	function($, metadata, dirty, done) {
+		var elements = [];
+		$('video-embed-code').each(function(i, elem) { elements.push(elem); });
+		async.eachSeries(elements, function(element, next) {
+			var href = $(element).attr('href');
+			if (href.match(/youtube.com/i)) {
+				var id = ytGetId(null, href);
+				ytVidInfo(id, function(err, result) {
+					if (err) {
+						next(err);
+					} else {
+						var item = result.items && result.items.length >= 0 ? result.items[0] : null;
+						var thumbs = item ? item.snippet.thumbnails : undefined;
+						akasha.partial('video-embed-code.html.ejs', {
+							imgurl: ytBestThumbnail(thumbs),
+							linkurl: metadata.rendered_url,
+							linktext: item.snippet.title,
+							teaser: metadata.teaser ? metadata.teaser : item.snippet.description
+						}, function(err, embedCode) {
+							if (err) {
+								next(err);
+							} else {
+								akasha.partial('ak-show-embed-code.html.ejs', {
+									cols: 40,
+									rows: 3,
+									code: embedCode
+								}, function(err, embedder) {
+									if (err) {
+										next(err);
+									} else {
+										$(element).replaceWith(embedder);
+										next();
+									}
+								});
+							}
+						});
+					}
+				});
+			} else if (href.match(/vimeo.com/i)) {
+				vimeoData(href, function(err, vdata) {
+					if (err) {
+						next(err);
+					} else {
+						akasha.partial('video-embed-code.html.ejs', {
+							imgurl: vdata.thumbnail_url,
+							linkurl: metadata.rendered_url,
+							linktext: vdata.title,
+							teaser: metadata.teaser ? metadata.teaser : vdata.description
+						}, function(err, embedCode) {
+							if (err) {
+								next(err);
+							} else {
+								akasha.partial('ak-show-embed-code.html.ejs', {
+									cols: 40,
+									rows: 3,
+									code: embedCode
+								}, function(err, embedder) {
+									if (err) {
+										next(err);
+									} else {
+										$(element).replaceWith(embedder);
+										next();
+									}
+								});
+							}
+						});
+					}
+				});
+			} else {
+				next(new Error('unrecognized video URL '+ href));
+			}
+		},
+		function(err) {
+			if (err) done(err); else done();
+		});
+	},
+	
+	function($, metadata, dirty, done) {
+		// <slideshare-embed href=".."
+		var elements = [];
+		$('slideshare-embed').each(function(i, elem) { elements.push(elem); });
+		$('slideshare-metadata').each(function(i, elem) { elements.push(elem); });
+		async.eachSeries(elements, function(element, next) {
+			var href = $(element).attr('href');
+			slideshareData(href, function(err, result) {
+				if (err) next(err);
+				else {
+					if (element.name === 'slideshare-embed') {
+						akasha.partial('slideshare-embed.html.ejs', {
+							title: result.title,
+							author_url: result.author_url,
+							author: result.author_name,
+							htmlEmbed: result.html,
+							slideshare_url: href
+						}, function(err, slideshow) {
+							if (err) {
+								next(err);
+							} else {
+								$(element).replaceWith(slideshow);
+								next();
+							}
+						});
+					} else if (element.name === 'slideshare-metadata') {
+						if ($('head').get(0)) {
+							// Only do this substitution if we are on a completely rendered page
+							$('head').append(
+								'<meta property="og:image" content="'+ result.thumbnail +'"/>\n' +
+								'<meta name="twitter:image" content="'+ result.thumbnail +'"/>\n'
+							);
+							$(element).replaceWith('');
+							next();
+						} else next();
+					} else {
+						next(new Error('unknown element '+ element.name));
+					}
+				}
+			});
+		},
+		function(err) {
+			if (err) done(err); else done();
+		});
+	},
+	
+	function($, metadata, dirty, done) {
+		// <oembed href="..." optional: template="..."/>
+		logger.trace('oembed');
+		var elemsOE = [];
+		$('oembed').each(function(i, elem) { elemsOE[i] = elem; });
+		// util.log(util.inspect(elemsOE));
+		async.eachSeries(elemsOE, function(elemOE, next) {
+			// util.log(util.inspect(elemOE));
+			var url = $(elemOE).attr("href");
+			var template = $(elemOE).attr('template');
+			akasha.oembedData(url, function(err, results) {
+				if (err) next(err);
+				else {
+					akasha.partial(template, results, function(err, html) {
+						if (err) next(err);
+						else { 
+							$(elemOE).replaceWith(html);
+							next();
+						}
+					})
+				}
+			});
+		}, function(err) {
+			if (err) done(err);
+			else done();
+		});
+	},
+	
+	function($, metadata, dirty, done) {
+		var href, width, height;
+		// <googledocs-viewer href="..." />
+		$('googledocs-viewer').each(function(i, elem) {
+			href = $(this).attr("href");
+			if (!href) done(new Error("URL required for googledocs-viewer"));
+			else {
+				$(this).replaceWith(
+					akasha.partialSync("google-doc-viewer.html.ejs", {
+						docViewerUrl: generateGoogleDocViewerUrl(href)
+					})
+				);
+			}
+		});
+		// <googledocs-view-link href="..." >Anchor Text</googledocs-view-link>
+		$('googledocs-view-link').each(function(i, elem) {
+			href = $(this).attr("href");
+			if (!href) return done(new Error("URL required for googledocs-view-link"));
+			var anchorText = $(this).text();
+			if (!anchorText) anchorText = "Click Here";
+			return $(this).replaceWith(
+				akasha.partialSync("google-doc-viewer-link.html.ejs", {
+					docViewerUrl: generateGoogleDocViewerUrl(href),
+					anchorText: anchorText
+				})
+			);
+		});
+		// <docviewer href="..." width="..." height="..."/>
+		$('docviewer').each(function(i, elem) {
+			href = $(this).attr("href");
+			if (!href) return done(new Error("URL required for docviewer"));
+			width = $(this).attr("width");
+			if (!width) width = "100%";
+			height = $(this).attr("height");
+			if (!height) height = "900px";
+			return $(this).replaceWith(
+				akasha.partialSync("viewerjs-embed.html.ejs", {
+					docUrl: generateViewerJSURL(href),
+					width: width, height: height
+				})
+			);
+		});
+		// <docviewer-link href="..." >Anchor Text</docviewer-link>
+		$('docviewer-link').each(function(i, elem) {
+			href = $(this).attr("href");
+			if (!href) return done(new Error("URL required for docviewer"));
+			var anchorText = $(this).text();
+			if (!anchorText) anchorText = "Click Here";
+			return $(this).replaceWith(
+				akasha.partialSync("viewerjs-link.html.ejs", {
+					docUrl: generateViewerJSURL(href),
+					anchorText: anchorText
+				})
+			);
+		});
+		done();
+	}
+];
