@@ -316,66 +316,7 @@ module.exports.config = function(_akasha, _config) {
     if (config.embeddables && config.embeddables.youtubeKey) {
         youtube.setKey(config.embeddables.youtubeKey);
     }
-    
-    /* */ config.funcs.googleDocsViewer = function(arg, callback) {
-    	// throw new Error("Do not use googleDocsViewer");
-        if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
-        var val = akasha.partialSync("google-doc-viewer.html.ejs", {
-            docViewerUrl: generateGoogleDocViewerUrl(arg.documentUrl)
-        });
-        if (callback) callback(undefined, val);
-        return val;
-    }; 
-    /* */ config.funcs.googleDocsViewLink = function(arg, callback) {
-    	// throw new Error("Do not use googleDocsViewLink");
-        if (!arg.documentUrl)  { callback(new Error("No 'documentUrl' given ")); }
-        if (!arg.anchorText)   {
-            if (arg.documentAnchorText) {
-                arg.anchorText = arg.documentAnchorText;
-            } else {
-                arg.anchorText = "View";
-            }
-        }
-        var val = akasha.partialSync("google-doc-viewer-link.html.ejs", {
-            docViewerUrl: generateGoogleDocViewerUrl(arg.documentUrl),
-            anchorText: arg.anchorText
-        });
-        if (callback) callback(undefined, val);
-        return val;
-    };
-    /* config.funcs.youtubePlayer = function(arg, callback) {
-    	throw new Error("Do not use youtubePlayer");
-        if (!callback)       { throw new Error("No callback given"); }
-        if (!arg.youtubeUrl) { callback(new Error("No youtubeUrl given")); }
-        if (!arg.template)   { arg.template = "youtube-embed.html.ejs"; }
-        arg.url = arg.youtubeUrl;
-        akasha.oembedRender(arg, callback);
-    };
-    config.funcs.viewerJSLink = function(arg, callback) {
-    	throw new Error("Do not use viewerJSLink");
-        if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
-        if (!arg.template)   { arg.template = "viewerjs-link.html.ejs"; }
-        if (!arg.anchorText) { arg.anchorText = "Click here"; }
-        var val = akasha.partialSync(arg.template, {
-            docUrl: generateViewerJSURL(arg.docUrl),
-            anchorText: arg.anchorText
-        });
-        return val;
-    }; */
-    /*  config.funcs.viewerJSViewer = function(arg, callback) {
-    	// throw new Error("Do not use viewerJSViewer");
-        if (!arg.docUrl)     { callback(new Error("No docUrl given")); }
-        if (!arg.template)   { arg.template = "viewerjs-embed.html.ejs"; }
-        if (!arg.width)      { arg.width = "100%"; }
-        if (!arg.height)     { arg.height = "900px"; }
-        var val = akasha.partialSync(arg.template, {
-            docUrl: generateViewerJSURL(arg.docUrl),
-            width: arg.width,
-            height: arg.height
-        });
-        return val;
-    };  */
-	
+
 	return module.exports;
 };
 
@@ -594,7 +535,7 @@ module.exports.mahabhuta = [
 	
 	function($, metadata, dirty, done) {
 		// <vimeo-player url="..." />
-		// <vimeo-thumb url="..." />
+		// <vimeo-thumbnail url="..." />
 		// <vimeo-title url="..." />
 		// <vimeo-author url="..." />
 		// <vimeo-description url="..." />
