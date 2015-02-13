@@ -748,6 +748,30 @@ module.exports.mahabhuta = [
 	},
 	
 	function($, metadata, dirty, done) {
+		// <twitter-embed href=".."
+		var elements = [];
+		$('twitter-embed').each(function(i, elem) { elements.push(elem); });
+		async.eachSeries(elements, function(element, next) {
+			var href = $(element).attr('href');
+			akasha.oEmbedData(href, function(err, results) {
+				if (err) next(err);
+				else {
+					akasha.partial("twitter-embed.html.ejs", results, function(err, html) {
+						if (err) next(err);
+						else { 
+							$(element).replaceWith(html);
+							next();
+						}
+					})
+				}
+			});
+		},
+		function(err) {
+			if (err) done(err); else done();
+		});
+	},
+	
+	function($, metadata, dirty, done) {
 		// <oembed href="..." optional: template="..."/>
 		logger.trace('oembed');
 		var elemsOE = [];
@@ -757,7 +781,7 @@ module.exports.mahabhuta = [
 			// util.log(util.inspect(elemOE));
 			var url = $(elemOE).attr("href");
 			var template = $(elemOE).attr('template');
-			akasha.oembedData(url, function(err, results) {
+			akasha.oEmbedData(url, function(err, results) {
 				if (err) next(err);
 				else {
 					akasha.partial(template, results, function(err, html) {
