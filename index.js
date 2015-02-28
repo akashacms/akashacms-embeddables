@@ -40,9 +40,12 @@ var ytVidInfo = module.exports.youtubeVidInfo = function(id, done) {
 			// If we have a youtubeKey then it's safe to call the youtube API
 			youtube.getById(id, function(resultData) {
 				// util.log('ytVidInfo id='+ id +' '+ util.inspect(resultData));
-				if (resultData.error) {
-					// trace.error(resultData.error.message);
-					done(new Error(resultData.error.message));
+				if (!resultData) {
+					logger.warn("No resultData for id "+ id);
+					done(new Error("No resultData for id "+ id));
+				} else if (resultData.error) {
+					logger.error(resultData.error.message);
+					done(new Error(resultData.error.message +' for id '+ id));
 				} else {
 					ytVidz[id] = resultData;
 					done(null, resultData);
