@@ -92,25 +92,50 @@ var ytVidInfo = module.exports.youtubeVidInfo = function(id, done) {
     }
 };
 
+var ytGetUrl = function($, elemYT) {
+	if (typeof elemYT === 'string') {
+	    return elemYT;
+	} else if (elemYT && $(elemYT).attr('href')) {
+        return $(elemYT).attr('href');
+    } else if (elemYT && $(elemYT).attr('url')) {
+        return $(elemYT).attr('url');
+    } else if (elemYT && $(elemYT).attr('id')) {
+        return url.format({
+			protocol: 'https',
+			hostname: 'www.youtube.com',
+			pathname: '/watch',
+			query: {
+				v: id
+			}
+		});
+    } else {
+        return null;
+    }
+};
+
 var ytGetId = function($, elemYT) {
     var id;
 	var idFromUrl = function(href) {
 		var yturl = url.parse(href, true);
+		// util.log('idFromUrl '+ util.inspect(yturl));
         if (yturl.query && yturl.query.v) {
-            return yturl.query.v
+            // util.log('returning ' +yturl.query.v);
+            return yturl.query.v;
         } else {
+            // util.log('returning NULL ');
 			return null;
 		}
 	};
+	var _yturl;
 	if (typeof elemYT === 'string') {
 		return idFromUrl(elemYT);
 	} else if (elemYT && $(elemYT).attr('id')) {
         id = $(elemYT).attr('id');
     } else if (elemYT && $(elemYT).attr('href')) {
-        var _yturl = $(elemYT).attr('href');
+        _yturl = $(elemYT).attr('href');
 		return idFromUrl(_yturl);
     } else if (elemYT && $(elemYT).attr('url')) {
-        var _yturl = $(elemYT).attr('url');
+        _yturl = $(elemYT).attr('url');
 		return idFromUrl(_yturl);
     }
     return id;
@@ -357,7 +382,8 @@ module.exports.mahabhuta = [
 			// util.log(util.inspect(elemYT));
 			
 			logger.trace(elemYT.name);
-			var id = ytGetId($, elemYT);
+			var yturl = ytGetUrl($, elemYT);
+			var id = ytGetId($, yturl);
 			if (!id) {
 				next(new Error("No Youtube ID"));
 			} else {
@@ -443,9 +469,11 @@ module.exports.mahabhuta = [
 		$('youtube-metadata').each(function(i, elem) { elemsYT[i] = elem; });
 		async.eachSeries(elemsYT, function(elemYT, next) {
 			logger.trace(elemYT.name);
-			var id = ytGetId($, elemYT);
+			// util.log($.html());
+			var yturl = ytGetUrl($, elemYT);
+			var id = ytGetId($, yturl);
 			if (!id) {
-				next(new Error("No Youtube ID"));
+				next(new Error("No Youtube ID in youtube-metadata")); // + util.inspect(elemYT)));
 			} else {
 				ytVidInfo(id, function(err, resultData) {
 					if (err) next(err);
@@ -484,15 +512,18 @@ module.exports.mahabhuta = [
 		$('framed-youtube-player').each(function(i, elem) { elemsYT.push(elem); });
 		async.eachSeries(elemsYT, function(elemYT, next) {
 			logger.trace(elemYT.name);
-			var id = ytGetId($, elemYT);
+			var yturl = ytGetUrl($, elemYT);
+			var id = ytGetId($, yturl);
 			if (!id) {
-				next(new Error("No Youtube ID"));
+				next(new Error("No Youtube ID for ")); // + util.inspect(elemYT)));
 			} else {
 				ytVidInfo(id, function(err, resultData) {
 					if (err) next(err);
 					else {
 						var result = resultData;
 						var item = result.items[0];
+						
+						// util.log(util.inspect(item));
 					
 						if (item) {
 							if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
@@ -510,7 +541,7 @@ module.exports.mahabhuta = [
 								next();
 							}  else if (elemYT.name /* .prop('tagName') */ === 'framed-youtube-player') {
 								akasha.partial('framed-youtube-player.html.ejs', {
-									youtubeUrl: $(elemYT).attr('url'),
+									youtubeUrl: yturl,
 									title: item.snippet.title,
 									// authorUrl: ,
 									authorName: item.snippet.channelTitle,
