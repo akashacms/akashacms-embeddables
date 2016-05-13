@@ -16,8 +16,9 @@
     "node": ">=0.10.1"
   },
   "dependencies": {
-    "youtube-node": "*",
+    "async": "*",
+    "debug": "^2.2.0",
     "request": "*",
-    "async": "*"
+    "youtube-node": "*"
   }
 }
