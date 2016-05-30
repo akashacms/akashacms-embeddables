@@ -42,22 +42,27 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 		config.addPartialsDir(path.join(__dirname, 'partials'));
 		config.addAssetsDir(path.join(__dirname, 'assets'));
 		config.addMahabhuta(module.exports.mahabhuta);
-		
-		if (config.embeddables && config.embeddables.youtubeKey) {
-			youtube.setKey(config.embeddables.youtubeKey);
-		}
-
 	}
-}
+	
+	set youtubeKey(key) {
+		if (!this._config.embeddables) this._config.embeddables = {};
+		this._config.embeddables.youtubeKey = key;
+		youtube.setKey(key);
+	}
+	
+	get youtubeKey() {
+		if (!this._config.embeddables) this._config.embeddables = {};
+		return this._config.embeddables.youtubeKey;
+	}
+};
 
 var ytVidz = [];
-var ytVidInfo = module.exports.youtubeVidInfo = function(id, done) {
+var ytVidInfo = module.exports.youtubeVidInfo = function(config, id, done) {
     if (ytVidz[id]) {
         // util.log('ytVidInfo id='+ id +' '+ util.inspect(ytVidz[id]));
         done(null, ytVidz[id]);
     } else {
-		if (module.exports._config.embeddables
-		 && module.exports._config.embeddables.youtubeKey) {
+		if (config.plugin("akashacms-embeddables").youtubeKey) {
 			// If we have a youtubeKey then it's safe to call the youtube API
 			youtube.getById(id, function(resultData) {
 				// util.log('ytVidInfo id='+ id +' '+ util.inspect(resultData));
@@ -114,22 +119,31 @@ var ytVidInfo = module.exports.youtubeVidInfo = function(id, done) {
 };
 
 var ytGetUrl = function($, elemYT) {
+	var newurl;
 	if (typeof elemYT === 'string') {
+		// util.log('ytGetUrl elemYT='+ elemYT);
 	    return elemYT;
 	} else if (elemYT && $(elemYT).attr('href')) {
-        return $(elemYT).attr('href');
+        newurl =  $(elemYT).attr('href');
+		// util.log('ytGetUrl href='+ newurl);
+		return newurl;
     } else if (elemYT && $(elemYT).attr('url')) {
-        return $(elemYT).attr('url');
+        newurl = $(elemYT).attr('url');
+		// util.log('ytGetUrl url='+ newurl);
+		return newurl;
     } else if (elemYT && $(elemYT).attr('id')) {
-        return url.format({
+        newurl = url.format({
 			protocol: 'https',
 			hostname: 'www.youtube.com',
 			pathname: '/watch',
 			query: {
-				v: id
+				v: $(elemYT).attr('id')
 			}
 		});
+		// util.log('ytGetUrl newurl='+ newurl);
+		return newurl;
     } else {
+		// util.log('ytGetUrl NULL');
         return null;
     }
 };
@@ -154,11 +168,14 @@ var ytGetId = function($, elemYT) {
         id = $(elemYT).attr('id');
     } else if (elemYT && $(elemYT).attr('href')) {
         _yturl = $(elemYT).attr('href');
+		// util.log('ytGetId href='+ _yturl);
 		return idFromUrl(_yturl);
     } else if (elemYT && $(elemYT).attr('url')) {
         _yturl = $(elemYT).attr('url');
+		// util.log('ytGetId url='+ _yturl);
 		return idFromUrl(_yturl);
     }
+	// util.log('ytGetId id='+ id);
     return id;
 };
 
@@ -179,18 +196,10 @@ var ytBestThumbnail = function(thumbs) {
 
 var ytPlayerCode = function($, config, elemYT, id) {
 	
-	var width = $(elemYT).attr('width')
-		? $(elemYT).attr('width')
-		: undefined;
-	var height = $(elemYT).attr('height')
-		? $(elemYT).attr('height')
-		: undefined;
-	var _class = $(elemYT).attr('class')
-		? $(elemYT).attr('class')
-		: undefined;
-	var style = $(elemYT).attr('style')
-		? $(elemYT).attr('style')
-		: undefined;
+	var width = $(elemYT).attr('width')   ? $(elemYT).attr('width')  : undefined;
+	var height = $(elemYT).attr('height') ? $(elemYT).attr('height') : undefined;
+	var _class = $(elemYT).attr('class')  ? $(elemYT).attr('class')  : undefined;
+	var style = $(elemYT).attr('style')   ? $(elemYT).attr('style')  : undefined;
 
 	if (!width && !height) {
 		width = "480";
@@ -213,62 +222,42 @@ var ytPlayerCode = function($, config, elemYT, id) {
 
 	// These options are explained here: https://developers.google.com/youtube/player_parameters
 
-	if ($(elemYT).attr('autohide'))
-		yturl.query['autohide'] = $(elemYT).attr('autohide');
-	if ($(elemYT).attr('autoplay'))
-		yturl.query['autoplay'] = $(elemYT).attr('autoplay');
-	if ($(elemYT).attr('cc_load_policy'))
-		yturl.query['cc_load_policy'] = $(elemYT).attr('cc_load_policy');
-	if ($(elemYT).attr('color'))
-		yturl.query['color'] = $(elemYT).attr('color');
-	if ($(elemYT).attr('controls'))
-		yturl.query['controls'] = $(elemYT).attr('controls');
-	if ($(elemYT).attr('disablekb'))
-		yturl.query['disablekb'] = $(elemYT).attr('disablekb');
-	if ($(elemYT).attr('enablejsapi'))
-		yturl.query['enablejsapi'] = $(elemYT).attr('enablejsapi');
-	if ($(elemYT).attr('end'))
-		yturl.query['end'] = $(elemYT).attr('end');
-	if ($(elemYT).attr('fs'))
-		yturl.query['fs'] = $(elemYT).attr('fs');
-	if ($(elemYT).attr('hl'))
-		yturl.query['hl'] = $(elemYT).attr('hl');
-	if ($(elemYT).attr('iv_load_policy'))
-		yturl.query['iv_load_policy'] = $(elemYT).attr('iv_load_policy');
-	if ($(elemYT).attr('list'))
-		yturl.query['list'] = $(elemYT).attr('list');
-	if ($(elemYT).attr('listType'))
-		yturl.query['listType'] = $(elemYT).attr('listType');
-	if ($(elemYT).attr('loop'))
-		yturl.query['loop'] = $(elemYT).attr('loop');
-	if ($(elemYT).attr('modestbranding'))
-		yturl.query['modestbranding'] = $(elemYT).attr('modestbranding');
-	if ($(elemYT).attr('origin'))
-		yturl.query['origin'] = $(elemYT).attr('origin');
-	if ($(elemYT).attr('playerapiid'))
-		yturl.query['playerapiid'] = $(elemYT).attr('playerapiid');
-	if ($(elemYT).attr('playlist'))
-		yturl.query['playlist'] = $(elemYT).attr('playlist');
-	if ($(elemYT).attr('playsinline'))
-		yturl.query['playsinline'] = $(elemYT).attr('playsinline');
-	if ($(elemYT).attr('rel'))
-		yturl.query['rel'] = $(elemYT).attr('rel');
-	if ($(elemYT).attr('showinfo'))
-		yturl.query['showinfo'] = $(elemYT).attr('showinfo');
-	if ($(elemYT).attr('start'))
-		yturl.query['start'] = $(elemYT).attr('start');
-	if ($(elemYT).attr('theme'))
-		yturl.query['theme'] = $(elemYT).attr('theme');
+	if ($(elemYT).attr('autohide')) yturl.query.autohide = $(elemYT).attr('autohide');
+	if ($(elemYT).attr('autoplay')) yturl.query.autoplay = $(elemYT).attr('autoplay');
+	if ($(elemYT).attr('cc_load_policy')) yturl.query.cc_load_policy = $(elemYT).attr('cc_load_policy');
+	if ($(elemYT).attr('color')) 	yturl.query.color = $(elemYT).attr('color');
+	if ($(elemYT).attr('controls')) yturl.query.controls = $(elemYT).attr('controls');
+	if ($(elemYT).attr('disablekb')) yturl.query.disablekb = $(elemYT).attr('disablekb');
+	if ($(elemYT).attr('enablejsapi')) yturl.query.enablejsapi = $(elemYT).attr('enablejsapi');
+	if ($(elemYT).attr('end'))      yturl.query.end = $(elemYT).attr('end');
+	if ($(elemYT).attr('fs'))       yturl.query.fs = $(elemYT).attr('fs');
+	if ($(elemYT).attr('hl'))       yturl.query.hl = $(elemYT).attr('hl');
+	if ($(elemYT).attr('iv_load_policy')) yturl.query.iv_load_policy = $(elemYT).attr('iv_load_policy');
+	if ($(elemYT).attr('list'))     yturl.query.list = $(elemYT).attr('list');
+	if ($(elemYT).attr('listType')) yturl.query.listType = $(elemYT).attr('listType');
+	if ($(elemYT).attr('loop'))     yturl.query.loop = $(elemYT).attr('loop');
+	if ($(elemYT).attr('modestbranding')) yturl.query.modestbranding = $(elemYT).attr('modestbranding');
+	if ($(elemYT).attr('origin'))   yturl.query.origin = $(elemYT).attr('origin');
+	if ($(elemYT).attr('playerapiid')) yturl.query.playerapiid = $(elemYT).attr('playerapiid');
+	if ($(elemYT).attr('playlist')) yturl.query.playlist = $(elemYT).attr('playlist');
+	if ($(elemYT).attr('playsinline')) yturl.query.playsinline = $(elemYT).attr('playsinline');
+	if ($(elemYT).attr('rel'))      yturl.query.rel = $(elemYT).attr('rel');
+	if ($(elemYT).attr('showinfo')) yturl.query.showinfo = $(elemYT).attr('showinfo');
+	if ($(elemYT).attr('start'))    yturl.query.start = $(elemYT).attr('start');
+	if ($(elemYT).attr('theme'))    yturl.query.theme = $(elemYT).attr('theme');
 
-	return akasha.partialSync(config, "youtube-embed-code.html.ejs", {
+	yturl = url.format(yturl);
+	var code = akasha.partialSync(config, "youtube-embed-code.html.ejs", {
 		idYouTube: id,
 		width: width,
 		height: height,
 		ytclass: _class,
 		style: style,
 		frameborder: "0",
-		yturl: url.format(yturl)
+		yturl
 	});
+	// log('embedCode for '+ yturl +' = '+ code);
+	return code;
 };
 
 // http://apiblog.youtube.com/2009/10/oembed-support.html
@@ -289,7 +278,7 @@ var youtubeOEmbedData = module.exports.youtubeOEmbedData = function(url2request,
 		function(err, res, body) {
 			if (err) { error(err); done(err); }
 			else {
-				// util.log(body);
+				// log('youtubeOEmbedData url= '+ url2request +' result= '+ body);
 				try {
 					youtubeOEmbedCache[url2request] = JSON.parse(body);
 					done(undefined, youtubeOEmbedCache[url2request]);
@@ -391,12 +380,14 @@ module.exports.mahabhuta = [
 			if (!id) {
 				next(new Error("No Youtube ID"));
 			} else {
-				ytVidInfo(id, function(err, resultData) {
+				ytVidInfo(metadata.config, id, function(err, resultData) {
 					if (err) next(err);
 					else {
 						var result = resultData;
 						var item = result.items && result.items.length >= 0 ? result.items[0] : null;
 						// var thumbs = item.snippet.thumbnails;
+						
+						// log(elemYT.name +' ytVidInfo id='+ id +' data='+ util.inspect(result));
 						
 						var template = $(elemYT).attr('template');
 						var player;
@@ -425,32 +416,31 @@ module.exports.mahabhuta = [
 							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
 								var thumbs = item ? item.snippet.thumbnails : undefined;
 								// if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
-								var align = $(elemYT).attr('align')
-									? $(elemYT).attr('align')
-									: undefined;
-								var width = $(elemYT).attr('width')
-									? $(elemYT).attr('width')
-									: "100%";
-								var height = $(elemYT).attr('height')
-									? $(elemYT).attr('height')
-									: undefined;
-								var _class = $(elemYT).attr('class')
-									? $(elemYT).attr('class')
-									: undefined;
-								var style = $(elemYT).attr('style')
-									? $(elemYT).attr('style')
-									: undefined;
+								var align = $(elemYT).attr('align') ? $(elemYT).attr('align') : undefined;
+								var width = $(elemYT).attr('width')	? $(elemYT).attr('width') : "100%";
+								// var height = $(elemYT).attr('height') ? $(elemYT).attr('height') : undefined;
+								var _class = $(elemYT).attr('class')  ? $(elemYT).attr('class')  : undefined;
+								var style = $(elemYT).attr('style')   ? $(elemYT).attr('style')  : undefined;
+								var title = $(elemYT).attr('title')   ? $(elemYT).attr('title')  : undefined;
+								var alt   = $(elemYT).attr('alt')     ? $(elemYT).attr('alt')    : undefined;
+								
+								if (!title) {
+									if (result.oEmbedData.title) {
+										title = result.oEmbedData.title;
+									}
+								}
 							
 								akasha.partial(metadata.config, template ? template : "youtube-thumb.html.ejs", {
 									imgwidth: width,
 									imgalign: align,
 									imgclass: _class,
-									style: style,
+									style, title, alt,
 									imgurl: ytBestThumbnail(thumbs)
 								})
 								.then(thumb => {
 									// log('youtube-thumb '+ thumb);
 									$(elemYT).replaceWith(thumb);
+									dirty();
 									next();
 								})
 								.catch(err => { error(err); next(err); });
@@ -477,24 +467,28 @@ module.exports.mahabhuta = [
 			if (!id) {
 				next(new Error("No Youtube ID in youtube-metadata")); // + util.inspect(elemYT)));
 			} else {
-				ytVidInfo(id, function(err, resultData) {
+				ytVidInfo(metadata.config, id, function(err, resultData) {
 					if (err) next(err);
 					else {
 						var result = resultData;
-						// util.log(util.inspect(result));
+						// log('youtube-metadata for '+ id +' '+ util.inspect(result));
 						var item = result && result.items && result.items.length >= 0 ? result.items[0] : null;
 						var thumbs = item ? item.snippet.thumbnails : undefined;
 						if (!item) {
 							next(new Error("(youtube-metadata) Youtube didn't get anything for id="+ id));
 						} else if ($('head').get(0)) {
 							// Only do this substitution if we are on a completely rendered page
+							// log('youtube-metadata running w/ head element');
 							$('head').append(
 								'<meta property="og:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n' +
 								'<meta name="twitter:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n'
 							);
 							$(elemYT).replaceWith('');
 							next();
-						} else next();
+						} else {
+							// log('youtube-metadata running before head element');
+							next();
+						}
 					}
 				});
 			}
@@ -519,13 +513,13 @@ module.exports.mahabhuta = [
 			if (!id) {
 				next(new Error("No Youtube ID for ")); // + util.inspect(elemYT)));
 			} else {
-				ytVidInfo(id, function(err, resultData) {
+				ytVidInfo(metadata.config, id, function(err, resultData) {
 					if (err) next(err);
 					else {
 						var result = resultData;
 						var item = result.items[0];
 						
-						// util.log(util.inspect(item));
+						// log(util.inspect(item));
 					
 						if (item) {
 							if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
@@ -549,10 +543,11 @@ module.exports.mahabhuta = [
 									authorName: item.snippet.channelTitle,
 									publishedAt: item.snippet.publishedAt,
 									description: item.snippet.description,
-									embedCode: ytPlayerCode($, metadata.config, elemYT, id)
+									embedCode: item.html ? item.html : ytPlayerCode($, metadata.config, elemYT, id)
 								})
 								.then(html => {
 									$(elemYT).replaceWith(html);
+									dirty();
 									next();
 								})
 								.catch(err => { error(err); next(err); });
@@ -606,21 +601,11 @@ module.exports.mahabhuta = [
 						.catch(err => { error(err); next(err); });
 					} else if (element.name === 'vimeo-thumbnail') {
 						
-						var width = $(element).attr('width')
-							? $(element).attr('width')
-							: undefined;
-						var height = $(element).attr('height')
-							? $(element).attr('height')
-							: undefined;
-						var _class = $(element).attr('class')
-							? $(element).attr('class')
-							: undefined;
-						var style = $(element).attr('style')
-							? $(element).attr('style')
-							: undefined;
-						var align = $(element).attr('align')
-							? $(element).attr('align')
-							: undefined;
+						var width = $(element).attr('width') ? $(element).attr('width') : undefined;
+						// var height = $(element).attr('height') ? $(element).attr('height') : undefined;
+						var _class = $(element).attr('class') ? $(element).attr('class') : undefined;
+						var style = $(element).attr('style') ? $(element).attr('style') : undefined;
+						var align = $(element).attr('align') ? $(element).attr('align') : undefined;
 							
 						akasha.partial(metadata.config, template ? template : "youtube-thumb.html.ejs", {
 							imgwidth: width,
@@ -662,7 +647,7 @@ module.exports.mahabhuta = [
 			var href = $(element).attr('href');
 			if (href.match(/youtube.com/i)) {
 				var id = ytGetId(null, href);
-				ytVidInfo(id, function(err, result) {
+				ytVidInfo(metadata.config, id, function(err, result) {
 					if (err) {
 						next(err);
 					} else {
@@ -800,7 +785,7 @@ module.exports.mahabhuta = [
 			var url = $(elemOE).attr("href");
 			var template = $(elemOE).attr('template');
 			akasha.oEmbedData(url)
-			.then(results => { return akasha.partial(metadata.config, template, results) })
+			.then(results => { return akasha.partial(metadata.config, template, results); })
 			.then(html => {
 				$(elemOE).replaceWith(html);
 				next();
