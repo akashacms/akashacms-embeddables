@@ -24,7 +24,7 @@ const util     = require('util');
 const url      = require('url');
 const async    = require('async');
 const request  = require('request');
-const akasha   = require('../akasharender');
+const akasha   = require('akasharender');
 
 const YouTube = require('youtube-node');
 const youtube = new YouTube();
