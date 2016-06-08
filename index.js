@@ -1,7 +1,7 @@
 /**
  *
  * Copyright 2013-2015 David Herron
- * 
+ *
  * This file is part of AkashaCMS-embeddables (http://akashacms.com/).
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,20 +36,20 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 	constructor() {
 		super("akashacms-embeddables");
 	}
-	
+
 	configure(config) {
 		this._config = config;
 		config.addPartialsDir(path.join(__dirname, 'partials'));
 		config.addAssetsDir(path.join(__dirname, 'assets'));
 		config.addMahabhuta(module.exports.mahabhuta);
 	}
-	
+
 	set youtubeKey(key) {
 		if (!this._config.embeddables) this._config.embeddables = {};
 		this._config.embeddables.youtubeKey = key;
 		youtube.setKey(key);
 	}
-	
+
 	get youtubeKey() {
 		if (!this._config.embeddables) this._config.embeddables = {};
 		return this._config.embeddables.youtubeKey;
@@ -195,7 +195,7 @@ var ytBestThumbnail = function(thumbs) {
 
 
 var ytPlayerCode = function($, config, elemYT, id) {
-	
+
 	var width = $(elemYT).attr('width')   ? $(elemYT).attr('width')  : undefined;
 	var height = $(elemYT).attr('height') ? $(elemYT).attr('height') : undefined;
 	var _class = $(elemYT).attr('class')  ? $(elemYT).attr('class')  : undefined;
@@ -213,7 +213,7 @@ var ytPlayerCode = function($, config, elemYT, id) {
 		query: []
 	};
 
-	/* 
+	/*
 	TODO update akashacms.com
 	TODO add a page of youtube embed examples
 
@@ -363,7 +363,7 @@ var generateViewerJSURL = function(docUrl) {
 };
 
 module.exports.mahabhuta = [
-	
+
 	function($, metadata, dirty, done) {
 		// <youtube-video href=".."/>  TBD: autoplay, thumbnail+lightbox
 		var elemsYT = [];
@@ -373,7 +373,7 @@ module.exports.mahabhuta = [
 		// util.log(util.inspect(elemsYT));
 		async.eachSeries(elemsYT, function(elemYT, next) {
 			// util.log(util.inspect(elemYT));
-			
+
 			log(elemYT.name);
 			var yturl = ytGetUrl($, elemYT);
 			var id = ytGetId($, yturl);
@@ -386,22 +386,22 @@ module.exports.mahabhuta = [
 						var result = resultData;
 						var item = result.items && result.items.length >= 0 ? result.items[0] : null;
 						// var thumbs = item.snippet.thumbnails;
-						
+
 						// log(elemYT.name +' ytVidInfo id='+ id +' data='+ util.inspect(result));
-						
+
 						var template = $(elemYT).attr('template');
 						var player;
-					
+
 						if (item) {
 							if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed')
 								player = ytPlayerCode($, metadata.config, elemYT, id);
-					
+
 							if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
 								akasha.partial(metadata.config, template ? template : "youtube-embed.html.ejs", {
 									title: item ? item.snippet.title : "",
 									html: player,
-									author_url: item 
-											? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos") 
+									author_url: item
+											? ("http://youtube.com/user/"+ item.snippet.channelTitle +"/videos")
 											: "",
 									author_name: item ? item.snippet.channelTitle : ""
 								})
@@ -423,13 +423,13 @@ module.exports.mahabhuta = [
 								var style = $(elemYT).attr('style')   ? $(elemYT).attr('style')  : undefined;
 								var title = $(elemYT).attr('title')   ? $(elemYT).attr('title')  : undefined;
 								var alt   = $(elemYT).attr('alt')     ? $(elemYT).attr('alt')    : undefined;
-								
+
 								if (!title) {
 									if (result.oEmbedData.title) {
 										title = result.oEmbedData.title;
 									}
 								}
-							
+
 								akasha.partial(metadata.config, template ? template : "youtube-thumb.html.ejs", {
 									imgwidth: width,
 									imgalign: align,
@@ -454,9 +454,9 @@ module.exports.mahabhuta = [
 			else done();
 		});
 	},
-	
+
 	function($, metadata, dirty, done) {
-		// <youtube-metadata id="" href=".."/>  
+		// <youtube-metadata id="" href=".."/>
 		var elemsYT = [];
 		$('youtube-metadata').each(function(i, elem) { elemsYT[i] = elem; });
 		async.eachSeries(elemsYT, function(elemYT, next) {
@@ -497,9 +497,9 @@ module.exports.mahabhuta = [
 			else done();
 		});
 	},
-	
+
 	function($, metadata, dirty, done) {
-		// <youtube-title id="" href=".."/>  
+		// <youtube-title id="" href=".."/>
 		var elemsYT = [];
 		$('youtube-title').each(function(i, elem) { elemsYT.push(elem); });
 		$('youtube-author').each(function(i, elem) { elemsYT.push(elem); });
@@ -518,9 +518,9 @@ module.exports.mahabhuta = [
 					else {
 						var result = resultData;
 						var item = result.items[0];
-						
+
 						// log(util.inspect(item));
-					
+
 						if (item) {
 							if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
 								$(elemYT).replaceWith(item.snippet.title);
@@ -561,14 +561,14 @@ module.exports.mahabhuta = [
 			else done();
 		});
 	},
-	
+
 	function($, metadata, dirty, done) {
 		// <vimeo-player url="..." />
 		// <vimeo-thumbnail url="..." />
 		// <vimeo-title url="..." />
 		// <vimeo-author url="..." />
 		// <vimeo-description url="..." />
-		
+
 		var elements = [];
 		$('vimeo-player').each(function(i, elem) { elements.push(elem); });
 		$('framed-vimeo-player').each(function(i, elem) { elements.push(elem); });
@@ -600,13 +600,13 @@ module.exports.mahabhuta = [
 						})
 						.catch(err => { error(err); next(err); });
 					} else if (element.name === 'vimeo-thumbnail') {
-						
+
 						var width = $(element).attr('width') ? $(element).attr('width') : undefined;
 						// var height = $(element).attr('height') ? $(element).attr('height') : undefined;
 						var _class = $(element).attr('class') ? $(element).attr('class') : undefined;
 						var style = $(element).attr('style') ? $(element).attr('style') : undefined;
 						var align = $(element).attr('align') ? $(element).attr('align') : undefined;
-							
+
 						akasha.partial(metadata.config, template ? template : "youtube-thumb.html.ejs", {
 							imgwidth: width,
 							imgalign: align,
@@ -639,7 +639,7 @@ module.exports.mahabhuta = [
 			if (err) done(err); else done();
 		});
 	},
-	
+
 	function($, metadata, dirty, done) {
 		var elements = [];
 		$('video-embed-code').each(function(i, elem) { elements.push(elem); });
@@ -708,7 +708,7 @@ module.exports.mahabhuta = [
 			if (err) done(err); else done();
 		});
 	},
-	
+
 	function($, metadata, dirty, done) {
 		// <slideshare-embed href=".."
 		var elements = [];
@@ -752,7 +752,7 @@ module.exports.mahabhuta = [
 			if (err) done(err); else done();
 		});
 	},
-	
+
 	function($, metadata, dirty, done) {
 		// <twitter-embed href=".."
 		var elements = [];
@@ -774,7 +774,7 @@ module.exports.mahabhuta = [
 			if (err) done(err); else done();
 		});
 	},
-	
+
 	function($, metadata, dirty, done) {
 		// <oembed href="..." optional: template="..."/>
 		var elemsOE = [];
@@ -796,7 +796,7 @@ module.exports.mahabhuta = [
 			else done();
 		});
 	},
-	
+
 	function($, metadata, dirty, done) {
 		var href, width, height;
 		// <googledocs-viewer href="..." />

@@ -1,6 +1,6 @@
 
 <%
-  if (typeof videoUrls !== "undefined") {
+  if (typeof videoUrls !== "undefined" && videoUrls) {
     videoUrls.forEach(function(videoData) {
     	if (videoData.url.match(/vimeo.com/)) { %>
 			<framed-vimeo-player <%
