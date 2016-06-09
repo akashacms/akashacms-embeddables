@@ -25,12 +25,15 @@ const url      = require('url');
 const async    = require('async');
 const request  = require('request');
 const akasha   = require('akasharender');
+const Metaphor = require('metaphor');
 
 const YouTube = require('youtube-node');
 const youtube = new YouTube();
 
-const log   = require('debug')('akasha:embeddables-plugin');
-const error = require('debug')('akasha:error-embeddables-plugin');
+const engine  = new Metaphor.Engine();
+
+const log     = require('debug')('akasha:embeddables-plugin');
+const error   = require('debug')('akasha:error-embeddables-plugin');
 
 module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 	constructor() {
@@ -362,6 +365,20 @@ var generateViewerJSURL = function(docUrl) {
     }
 };
 
+var engineDescribe = function(url, cb) {
+	var description = akasha.cache.get('akashacms-embeddables:describe', url);
+	if (description) {
+		log('engineDescribe had cache for '+ url);
+		cb(description);
+	} else {
+		log('engineDescribe no cache for '+ url);
+		engine.describe(url, description => {
+			akasha.cache.set('akashacms-embeddables:describe', url, description);
+			cb(description);
+		});
+	}
+}
+
 module.exports.mahabhuta = [
 
 	function($, metadata, dirty, done) {
@@ -491,6 +508,124 @@ module.exports.mahabhuta = [
 						}
 					}
 				});
+			}
+		}, function(err) {
+			if (err) done(err);
+			else done();
+		});
+	},
+
+	function($, metadata, dirty, done) {
+		var elements = [];
+		$('embed-thumbnail').each((i, elem) => { elements.push(elem); });
+		async.eachSeries(elements, (element, next) => {
+			const template = $(element).attr('template');
+			const embedurl = $(element).attr('href');
+			if (!embedurl) {
+				return next(new Error('No embed url in '+ metadata.document.path));
+			}
+			log(element.name +' '+ metadata.document.path +' '+ embedurl);
+			try {
+				engineDescribe(embedurl, description => {
+					if (!description) {
+						return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
+					}
+					if (description.thumbnail || description.image) {
+
+						var width  = $(element).attr('width') ? $(element).attr('width') : undefined;
+						// var height = $(element).attr('height') ? $(element).attr('height') : undefined;
+						var _class = $(element).attr('class') ? $(element).attr('class') : undefined;
+						var style  = $(element).attr('style') ? $(element).attr('style') : undefined;
+						var align  = $(element).attr('align') ? $(element).attr('align') : undefined;
+
+						akasha.partial(metadata.config, template ? template : "youtube-thumb.html.ejs", {
+							imgwidth: width,
+							imgalign: align,
+							imgclass: _class,
+							style: style,
+							imgurl: description.thumbnail && description.thumbnail.url ? description.thumbnail.url : description.image.url
+						})
+						.then(thumb => {
+							// log('vimeo-thumbnail '+ thumb);
+							$(element).replaceWith(thumb);
+							dirty();
+							next();
+						})
+						.catch(err => { error(err); next(err); });
+					} else {
+						$(element).replaceWith("<img src='/no-image.gif'/>")
+						next();
+					}
+					// TODO allow site owner to define substitute image URL
+				});
+			} catch (e) {
+				console.error('embed-thumbnail FAILURE on url '+ embedurl +' in '+ metadata.document.path +' because '+ e);
+				next();
+			}
+		}, function(err) {
+			if (err) done(err);
+			else done();
+		});
+	},
+
+
+	function($, metadata, dirty, done) {
+		var elements = [];
+		$('framed-embed').each((i, elem) => { elements.push(elem); });
+		async.eachSeries(elements, (element, next) => {
+			log(element.name);
+			const template = $(element).attr('template');
+			const embedurl = $(element).attr('href');
+			const title    = $(element).attr('title');
+			if (!embedurl) {
+				return next(new Error('No embed url in '+ metadata.document.path));
+			}
+			try {
+				engineDescribe(embedurl, description => {
+					if (!description) {
+						return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
+					}
+					if (description.embed && description.embed.html) {
+						akasha.partial(metadata.config, template ? template : 'framed-embed.html.ejs', {
+							embedUrl: embedurl,
+							embedSource: description.site_name,
+							title: title ? title : description.title,
+							// authorUrl: ,
+							// authorName: item.snippet.channelTitle,
+							// publishedAt: item.snippet.publishedAt,
+							description: description.description,
+							embedCode: description.embed.html
+						})
+						.then(html => {
+							$(element).replaceWith(html);
+							dirty();
+							next();
+						})
+						.catch(err => { error(err); next(err); });
+					} else if (description.preview) {
+						akasha.partial(metadata.config, template ? template : 'framed-embed.html.ejs', {
+							embedUrl: embedurl,
+							embedSource: description.site_name,
+							title: title ? title : description.site_name,
+							// authorUrl: ,
+							// authorName: item.snippet.channelTitle,
+							// publishedAt: item.snippet.publishedAt,
+							description: undefined,
+							embedCode: description.preview
+						})
+						.then(html => {
+							$(element).replaceWith(html);
+							dirty();
+							next();
+						})
+						.catch(err => { error(err); next(err); });
+					} else {
+						next(new Error("No embeddable content found for url "+ embedurl +" in "+ metadata.document.path))
+					}
+				});
+			} catch (e) {
+				console.error('framed-embed FAILURE on url '+ embedurl +' in '+ metadata.document.path +' because '+ e);
+				next();
 			}
 		}, function(err) {
 			if (err) done(err);

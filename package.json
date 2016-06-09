@@ -19,6 +19,7 @@
     "async": "*",
     "debug": "^2.2.0",
     "request": "*",
-    "youtube-node": "*"
+    "youtube-node": "*",
+    "metaphor": ">=3.4.1"
   }
 }
