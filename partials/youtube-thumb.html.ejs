@@ -1,26 +1,26 @@
 <img <%
-    if (imgclass) {
+    if (typeof imgclass !== 'undefined' && imgclass) {
         %>class="<%= imgclass %>" <%
     }
-    
-    if (imgwidth) {
+
+    if (typeof imgwidth !== 'undefined' && imgwidth) {
         %>width="<%= imgwidth %>" <%
     }
-    
-    if (imgalign) {
+
+    if (typeof imgalign !== 'undefined' && imgalign) {
         %>align="<%= imgalign %>" <%
     }
-    
-    if (style) {
+
+    if (typeof style !== 'undefined' && style) {
         %>style="<%= style %>" <%
     }
-    
-    if (alt) {
+
+    if (typeof alt !== 'undefined' && alt) {
         %>alt="<%= alt %>" <%
     }
-    
-    if (title) {
+
+    if (typeof title !== 'undefined' && title) {
         %>title="<%= title %>" <%
     }
-    
+
     %> src="<%= imgurl %>"/>
