@@ -967,6 +967,7 @@ module.exports.mahabhuta = [
 			if (!width) width = "100%";
 			height = $(this).attr("height");
 			if (!height) height = "900px";
+			// console.log(`docviewer ${href} ${width} ${height}`);
 			return $(this).replaceWith(
 				akasha.partialSync(metadata.config, "viewerjs-embed.html.ejs", {
 					docUrl: generateViewerJSURL(href),
