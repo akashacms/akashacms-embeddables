@@ -585,7 +585,9 @@ module.exports.mahabhuta = [
 					if (!description) {
 						return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
 					}
+					// console.log(`embedurl = ${embedurl} description = ${util.inspect(description)}`);
 					if (description.embed && description.embed.html) {
+						// console.log(`saw embed html ${description.embed.html}`);
 						akasha.partial(metadata.config, template ? template : 'framed-embed.html.ejs', {
 							embedUrl: embedurl,
 							embedSource: description.site_name,
@@ -603,6 +605,7 @@ module.exports.mahabhuta = [
 						})
 						.catch(err => { error(err); next(err); });
 					} else if (description.preview) {
+						// console.log(`saw preview ${description.preview}`);
 						akasha.partial(metadata.config, template ? template : 'framed-embed.html.ejs', {
 							embedUrl: embedurl,
 							embedSource: description.site_name,
