@@ -572,23 +572,35 @@ module.exports.mahabhuta = [
 	function($, metadata, dirty, done) {
 		var elements = [];
 		$('framed-embed').each((i, elem) => { elements.push(elem); });
+		$('simple-embed').each((i, elem) => { elements.push(elem); });
+		// console.log(`framed/simple-embed ${elements.length}`);
 		async.eachSeries(elements, (element, next) => {
-			log(element.name);
-			const template = $(element).attr('template');
-			const embedurl = $(element).attr('href');
-			const title    = $(element).attr('title');
+			var template = $(element).attr('template');
+			var embedurl = $(element).attr('href');
+			var title    = $(element).attr('title');
+			if (!template) {
+				if (element.name === 'framed-embed') {
+					template = 'framed-embed.html.ejs';
+				} else if (element.name === 'simple-embed') {
+					template = 'simple-embed.html.ejs';
+				} else {
+					return next(new Error("Incorrect element.name "+ element.name +" SHOULD NOT HAPPEN"));
+				}
+			}
 			if (!embedurl) {
 				return next(new Error('No embed url in '+ metadata.document.path));
 			}
+			// console.log(`${element.name} ${template} ${embedurl} ${title}`);
 			try {
 				engineDescribe(embedurl, description => {
+					// console.log(`${util.inspect(description)}`);
 					if (!description) {
 						return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
 					}
 					// console.log(`embedurl = ${embedurl} description = ${util.inspect(description)}`);
 					if (description.embed && description.embed.html) {
 						// console.log(`saw embed html ${description.embed.html}`);
-						akasha.partial(metadata.config, template ? template : 'framed-embed.html.ejs', {
+						akasha.partial(metadata.config, template, {
 							embedUrl: embedurl,
 							embedSource: description.site_name,
 							title: title ? title : description.title,
@@ -606,7 +618,7 @@ module.exports.mahabhuta = [
 						.catch(err => { error(err); next(err); });
 					} else if (description.preview) {
 						// console.log(`saw preview ${description.preview}`);
-						akasha.partial(metadata.config, template ? template : 'framed-embed.html.ejs', {
+						akasha.partial(metadata.config, template, {
 							embedUrl: embedurl,
 							embedSource: description.site_name,
 							title: title ? title : description.site_name,
