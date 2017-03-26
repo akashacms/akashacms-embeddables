@@ -300,7 +300,7 @@ var vimeoData = module.exports.vimeoData = function(url2request, done) {
 		done(undefined, vimeoCache[url2request]);
 	} else {
 		request(url.format({
-			protocol: 'http',
+			protocol: 'https',
 			host: 'vimeo.com',
 			pathname: '/api/oembed.json',
 			query: {
