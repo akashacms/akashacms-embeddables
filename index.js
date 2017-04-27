@@ -408,6 +408,7 @@ module.exports.mahabhuta = [
 
 						var template = $(elemYT).attr('template');
 						var player;
+                        dirty();
 
 						if (item) {
 							if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed')
@@ -670,6 +671,7 @@ module.exports.mahabhuta = [
 						var item = result.items[0];
 
 						// log(util.inspect(item));
+                        dirty();
 
 						if (item) {
 							if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
@@ -731,6 +733,7 @@ module.exports.mahabhuta = [
 			vimeoData($(element).attr('url'), function(err, vdata) {
 				if (err) next(err);
 				else {
+                    dirty();
 					var template = $(element).attr('template');
 					if (element.name === 'vimeo-player') {
 						$(element).replaceWith(vdata.html);
