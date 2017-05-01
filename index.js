@@ -594,7 +594,7 @@ module.exports.mahabhuta = [
 			// console.log(`${element.name} ${template} ${embedurl} ${title}`);
 			try {
 				engineDescribe(embedurl, description => {
-					// console.log(`${util.inspect(description)}`);
+					// console.log(`${embedurl} ${util.inspect(description)}`);
 					if (!description) {
 						return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
 					}
@@ -609,7 +609,9 @@ module.exports.mahabhuta = [
 							// authorName: item.snippet.channelTitle,
 							// publishedAt: item.snippet.publishedAt,
 							description: description.description,
-							embedCode: description.embed.html
+							embedCode: description.embed.html,
+                            preview: description.preview,
+                            fullEmbed: description
 						})
 						.then(html => {
 							$(element).replaceWith(html);
@@ -627,7 +629,8 @@ module.exports.mahabhuta = [
 							// authorName: item.snippet.channelTitle,
 							// publishedAt: item.snippet.publishedAt,
 							description: undefined,
-							embedCode: description.preview
+							embedCode: description.preview,
+                            fullEmbed: description
 						})
 						.then(html => {
 							$(element).replaceWith(html);
