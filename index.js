@@ -22,15 +22,25 @@
 const path     = require('path');
 const util     = require('util');
 const url      = require('url');
+const co       = require('co');
 const async    = require('async');
 const request  = require('request');
 const akasha   = require('akasharender');
 const Metaphor = require('metaphor');
+const urlEmbed = require('url-embed');
 
 const YouTube = require('youtube-node');
 const youtube = new YouTube();
 
 const engine  = new Metaphor.Engine();
+
+let EmbedEngine = urlEmbed.EmbedEngine;
+let Embed =  urlEmbed.Embed;
+let urlEngine = new EmbedEngine({
+  timeoutMs: 2000,
+  referrer: '7gen.com'
+});
+urlEngine.registerDefaultProviders();
 
 const log     = require('debug')('akasha:embeddables-plugin');
 const error   = require('debug')('akasha:error-embeddables-plugin');
@@ -365,19 +375,23 @@ var generateViewerJSURL = function(docUrl) {
     }
 };
 
-var engineDescribe = function(url, cb) {
-	var description = akasha.cache.get('akashacms-embeddables:describe', url);
-	if (description) {
-		log('engineDescribe had cache for '+ url);
-		cb(description);
-	} else {
-		log('engineDescribe no cache for '+ url);
-		engine.describe(url, description => {
-			akasha.cache.set('akashacms-embeddables:describe', url, description);
-			cb(description);
-		});
-	}
-}
+var engineDescribe = co.wrap(function* (url, cb) {
+    var description = akasha.cache.get('akashacms-embeddables:describe', url);
+    if (description) {
+        log('engineDescribe had cache for '+ url);
+        return description;
+    } else {
+        log('engineDescribe no cache for '+ url);
+        return yield new Promise((resolve, reject) => {
+            try {
+                engine.describe(url, description => {
+                    akasha.cache.set('akashacms-embeddables:describe', url, description);
+                    resolve(description);
+                });
+            } catch (e) { reject(e); }
+        });
+    }
+});
 
 module.exports.mahabhuta = [
 
@@ -526,43 +540,43 @@ module.exports.mahabhuta = [
 				return next(new Error('No embed url in '+ metadata.document.path));
 			}
 			log(element.name +' '+ metadata.document.path +' '+ embedurl);
-			try {
-				engineDescribe(embedurl, description => {
-					if (!description) {
-						return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
-					}
-					if (description.thumbnail || description.image) {
+			engineDescribe(embedurl).then(description => {
+				if (!description) {
+					return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
+				}
+				if (description.thumbnail || description.image) {
 
-						var width  = $(element).attr('width') ? $(element).attr('width') : undefined;
-						// var height = $(element).attr('height') ? $(element).attr('height') : undefined;
-						var _class = $(element).attr('class') ? $(element).attr('class') : undefined;
-						var style  = $(element).attr('style') ? $(element).attr('style') : undefined;
-						var align  = $(element).attr('align') ? $(element).attr('align') : undefined;
+					var width  = $(element).attr('width') ? $(element).attr('width') : undefined;
+					// var height = $(element).attr('height') ? $(element).attr('height') : undefined;
+					var _class = $(element).attr('class') ? $(element).attr('class') : undefined;
+					var style  = $(element).attr('style') ? $(element).attr('style') : undefined;
+					var align  = $(element).attr('align') ? $(element).attr('align') : undefined;
 
-						akasha.partial(metadata.config, template ? template : "youtube-thumb.html.ejs", {
-							imgwidth: width,
-							imgalign: align,
-							imgclass: _class,
-							style: style,
-							imgurl: description.thumbnail && description.thumbnail.url ? description.thumbnail.url : description.image.url
-						})
-						.then(thumb => {
-							// log('vimeo-thumbnail '+ thumb);
-							$(element).replaceWith(thumb);
-							dirty();
-							next();
-						})
-						.catch(err => { error(err); next(err); });
-					} else {
-						$(element).replaceWith("<img src='/no-image.gif'/>")
+					akasha.partial(metadata.config, template ? template : "youtube-thumb.html.ejs", {
+						imgwidth: width,
+						imgalign: align,
+						imgclass: _class,
+						style: style,
+						imgurl: description.thumbnail && description.thumbnail.url ? description.thumbnail.url : description.image.url
+					})
+					.then(thumb => {
+						// log('vimeo-thumbnail '+ thumb);
+						$(element).replaceWith(thumb);
+						dirty();
 						next();
-					}
-					// TODO allow site owner to define substitute image URL
-				});
-			} catch (e) {
-				console.error('embed-thumbnail FAILURE on url '+ embedurl +' in '+ metadata.document.path +' because '+ e);
-				next();
-			}
+					})
+					.catch(err => { error(err); next(err); });
+				} else {
+					$(element).replaceWith("<img src='/no-image.gif'/>")
+					next();
+				}
+				// TODO allow site owner to define substitute image URL
+			}).catch(e => {
+    			console.error('embed-thumbnail FAILURE on url '+
+                    embedurl +' in '+ metadata.document.path
+                    +' because '+ e);
+    			next();
+            });
 		}, function(err) {
 			if (err) done(err);
 			else done();
@@ -591,61 +605,94 @@ module.exports.mahabhuta = [
 			if (!embedurl) {
 				return next(new Error('No embed url in '+ metadata.document.path));
 			}
+
+            let embed = new Embed(embedurl, {});
+            urlEngine.getEmbed(embed, (embed) => {
+              if (embed.error) {
+                  return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
+              }
+
+              if (!title && embed.title) title = embed.title;
+              else if (!title && embed.author_name) title = embed.author_name;
+              else if (!title) title = "no-title";
+
+              akasha.partial(metadata.config, template, {
+                  embedUrl: embedurl,
+                  embedSource: embed.data.provider_name,
+                  title: title,
+                  authorUrl: embed.data.author_url,
+                  authorName: embed.data.author_name,
+                  // publishedAt: item.snippet.publishedAt,
+                  description: "",
+                  embedCode: embed.data.html,
+                  preview: embed.data.html,
+                  fullEmbed: embed
+              })
+              .then(html => {
+                  $(element).replaceWith(html);
+                  dirty();
+                  next();
+              })
+              .catch(err => { error(err); next(err); });
+              // Embed markup
+              // console.log(embed.data.html);
+            });
+
 			// console.log(`${element.name} ${template} ${embedurl} ${title}`);
-			try {
-				engineDescribe(embedurl, description => {
-					// console.log(`${embedurl} ${util.inspect(description)}`);
-					if (!description) {
-						return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
-					}
-					// console.log(`embedurl = ${embedurl} description = ${util.inspect(description)}`);
-					if (description.embed && description.embed.html) {
-						// console.log(`saw embed html ${description.embed.html}`);
-						akasha.partial(metadata.config, template, {
-							embedUrl: embedurl,
-							embedSource: description.site_name,
-							title: title ? title : description.title,
-							// authorUrl: ,
-							// authorName: item.snippet.channelTitle,
-							// publishedAt: item.snippet.publishedAt,
-							description: description.description,
-							embedCode: description.embed.html,
-                            preview: description.preview,
-                            fullEmbed: description
-						})
-						.then(html => {
-							$(element).replaceWith(html);
-							dirty();
-							next();
-						})
-						.catch(err => { error(err); next(err); });
-					} else if (description.preview) {
-						// console.log(`saw preview ${description.preview}`);
-						akasha.partial(metadata.config, template, {
-							embedUrl: embedurl,
-							embedSource: description.site_name,
-							title: title ? title : description.site_name,
-							// authorUrl: ,
-							// authorName: item.snippet.channelTitle,
-							// publishedAt: item.snippet.publishedAt,
-							description: undefined,
-							embedCode: description.preview,
-                            fullEmbed: description
-						})
-						.then(html => {
-							$(element).replaceWith(html);
-							dirty();
-							next();
-						})
-						.catch(err => { error(err); next(err); });
-					} else {
-						next(new Error("No embeddable content found for url "+ embedurl +" in "+ metadata.document.path))
-					}
-				});
-			} catch (e) {
-				console.error('framed-embed FAILURE on url '+ embedurl +' in '+ metadata.document.path +' because '+ e);
+            /* engineDescribe(embedurl).then(description => {
+				// console.log(`${embedurl} ${util.inspect(description)}`);
+				if (!description) {
+					return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
+				}
+				// console.log(`embedurl = ${embedurl} description = ${util.inspect(description)}`);
+				if (description.embed && description.embed.html) {
+					// console.log(`saw embed html ${description.embed.html}`);
+					akasha.partial(metadata.config, template, {
+						embedUrl: embedurl,
+						embedSource: description.site_name,
+						title: title ? title : description.title,
+						// authorUrl: ,
+						// authorName: item.snippet.channelTitle,
+						// publishedAt: item.snippet.publishedAt,
+						description: description.description,
+						embedCode: description.embed.html,
+                        preview: description.preview,
+                        fullEmbed: description
+					})
+					.then(html => {
+						$(element).replaceWith(html);
+						dirty();
+						next();
+					})
+					.catch(err => { error(err); next(err); });
+				} else if (description.preview) {
+					// console.log(`saw preview ${description.preview}`);
+					akasha.partial(metadata.config, template, {
+						embedUrl: embedurl,
+						embedSource: description.site_name,
+						title: title ? title : description.site_name,
+						// authorUrl: ,
+						// authorName: item.snippet.channelTitle,
+						// publishedAt: item.snippet.publishedAt,
+						description: undefined,
+						embedCode: description.preview,
+                        fullEmbed: description
+					})
+					.then(html => {
+						$(element).replaceWith(html);
+						dirty();
+						next();
+					})
+					.catch(err => { error(err); next(err); });
+				} else {
+					next(new Error("No embeddable content found for url "+ embedurl +" in "+ metadata.document.path))
+				}
+			}).catch(e => {
+				console.error('framed-embed FAILURE on url '
+                    + embedurl +' in '+ metadata.document.path
+                    +' because '+ e);
 				next();
-			}
+			}); */
 		}, function(err) {
 			if (err) done(err);
 			else done();
