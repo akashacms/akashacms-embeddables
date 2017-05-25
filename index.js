@@ -612,7 +612,7 @@ module.exports.mahabhuta = [
                   return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
               }
 
-              if (!title && embed.title) title = embed.title;
+              if (!title && embed.data.title) title = embed.data.title;
               else if (!title && embed.author_name) title = embed.author_name;
               else if (!title) title = "no-title";
 
