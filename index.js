@@ -606,7 +606,7 @@ module.exports.mahabhuta = [
 				return next(new Error('No embed url in '+ metadata.document.path));
 			}
 
-            let embed = new Embed(embedurl, {});
+            /* let embed = new Embed(embedurl, {});
             urlEngine.getEmbed(embed, (embed) => {
               if (embed.error) {
                   return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
@@ -636,10 +636,10 @@ module.exports.mahabhuta = [
               .catch(err => { error(err); next(err); });
               // Embed markup
               // console.log(embed.data.html);
-            });
+            }); */
 
 			// console.log(`${element.name} ${template} ${embedurl} ${title}`);
-            /* engineDescribe(embedurl).then(description => {
+            engineDescribe(embedurl).then(description => {
 				// console.log(`${embedurl} ${util.inspect(description)}`);
 				if (!description) {
 					return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
@@ -692,7 +692,7 @@ module.exports.mahabhuta = [
                     + embedurl +' in '+ metadata.document.path
                     +' because '+ e);
 				next();
-			}); */
+			}); /* */
 		}, function(err) {
 			if (err) done(err);
 			else done();
