@@ -418,7 +418,7 @@ module.exports.mahabhuta = [
 						var item = result.items && result.items.length >= 0 ? result.items[0] : null;
 						// var thumbs = item.snippet.thumbnails;
 
-						// log(elemYT.name +' ytVidInfo id='+ id +' data='+ util.inspect(result));
+						console.log(elemYT.name +' ytVidInfo id='+ id +' data='+ util.inspect(result));
 
 						var template = $(elemYT).attr('template');
 						var player;
