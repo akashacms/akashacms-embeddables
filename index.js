@@ -401,7 +401,7 @@ var urlEngineGetEmbed = co.wrap(function* (embedurl) {
     }
 
     let embed = new Embed(embedurl, {});
-    embed = yield new Promise((resolve, reject) {
+    embed = yield new Promise((resolve, reject) => {
         try {
             urlEngine.getEmbed(embed, (embed) => {
                 if (embed.error) {
@@ -412,7 +412,7 @@ var urlEngineGetEmbed = co.wrap(function* (embedurl) {
                 }
             });
         } catch (e) { reject(e); }
-    })
+    });
 
 });
 
