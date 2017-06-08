@@ -393,7 +393,7 @@ var engineDescribe = co.wrap(function* (url, cb) {
     }
 });
 
-var urlEngineGetEmbed = co.wrap(function* (embedurl) {
+var urlEngineGetEmbed = co.wrap(function* (metadata, embedurl) {
 
     var description = akasha.cache.get('akashacms-embeddables:url-embed-data', embedurl);
     if (description) {
@@ -433,7 +433,7 @@ module.exports.mahabhuta = [
             var embedurl = ytGetUrl($, elemYT);
             var template = $(elemYT).attr('template');
 
-            urlEngineGetEmbed(embedurl)
+            urlEngineGetEmbed(metadata, embedurl)
             .then(embed => {
                 if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
                     akasha.partial(metadata.config, template ? template : "youtube-embed.html.ejs", {
@@ -630,7 +630,7 @@ module.exports.mahabhuta = [
             var align  = $(element).attr('align') ? $(element).attr('align') : undefined;
 			log(element.name +' '+ metadata.document.path +' '+ embedurl);
 
-            urlEngineGetEmbed(embedurl)
+            urlEngineGetEmbed(metadata, embedurl)
             .then(embed => {
                 if (embed.thumbnail_url) {
                     akasha.partial(metadata.config, template, {
@@ -638,7 +638,7 @@ module.exports.mahabhuta = [
                         imgalign: align,
                         imgclass: _class,
                         style: style,
-                        imgurl: embed.thumbnail_url
+                        imgurl: embed.data.thumbnail_url
                     })
                     .then(thumb => {
                         // log('vimeo-thumbnail '+ thumb);
@@ -723,7 +723,7 @@ module.exports.mahabhuta = [
 				return next(new Error('No embed url in '+ metadata.document.path));
 			}
 
-            urlEngineGetEmbed(embedurl)
+            urlEngineGetEmbed(metadata, embedurl)
             .then(embed => {
                 if (!title && embed.data.title) title = embed.data.title;
                 else if (!title && embed.author_name) title = embed.author_name;
