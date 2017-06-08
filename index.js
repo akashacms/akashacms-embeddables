@@ -405,6 +405,66 @@ module.exports.mahabhuta = [
 		async.eachSeries(elemsYT, function(elemYT, next) {
 			// util.log(util.inspect(elemYT));
 
+            var embedurl = ytGetUrl($, elemYT);
+            var template = $(elemYT).attr('template');
+
+            let embed = new Embed(embedurl, {});
+            urlEngine.getEmbed(embed, (embed) => {
+                if (embed.error) {
+                    return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
+                }
+
+                if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
+                    akasha.partial(metadata.config, template ? template : "youtube-embed.html.ejs", {
+                        title: embed.data.title,
+                        html: embed.data.html,
+                        author_url: embed.data.author_url,
+                        author_name: embed.data.author_name
+                    })
+                    .then(embed => {
+                        $(elemYT).replaceWith(embed);
+                        next();
+                    })
+                    .catch(err => { error(err); next(err); });
+                } else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
+                    $(elemYT).replaceWith(embed.data.html);
+                    next();
+                } else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
+                    var thumbs = item ? item.snippet.thumbnails : undefined;
+                    // if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
+                    var align = $(elemYT).attr('align') ? $(elemYT).attr('align') : undefined;
+                    var width = $(elemYT).attr('width')	? $(elemYT).attr('width') : "100%";
+                    // var height = $(elemYT).attr('height') ? $(elemYT).attr('height') : undefined;
+                    var _class = $(elemYT).attr('class')  ? $(elemYT).attr('class')  : undefined;
+                    var style = $(elemYT).attr('style')   ? $(elemYT).attr('style')  : undefined;
+                    var title = $(elemYT).attr('title')   ? $(elemYT).attr('title')  : undefined;
+                    var alt   = $(elemYT).attr('alt')     ? $(elemYT).attr('alt')    : undefined;
+
+                    if (!title) {
+                        if (embed.data.title) {
+                            title = embed.data.title;
+                        }
+                    }
+
+                    akasha.partial(metadata.config, template ? template : "youtube-thumb.html.ejs", {
+                        imgwidth: width,
+                        imgalign: align,
+                        imgclass: _class,
+                        style, title, alt,
+                        imgurl: embed.data.thumbnail_url
+                    })
+                    .then(thumb => {
+                        // log('youtube-thumb '+ thumb);
+                        $(elemYT).replaceWith(thumb);
+                        dirty();
+                        next();
+                    })
+                    .catch(err => { error(err); next(err); });
+                } else next(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
+
+            });
+
+            /*
 			log(elemYT.name);
 			var yturl = ytGetUrl($, elemYT);
 			var id = ytGetId($, yturl);
@@ -428,7 +488,7 @@ module.exports.mahabhuta = [
 							if (elemYT.name === 'youtube-video' || elemYT.name === 'youtube-video-embed')
 								player = ytPlayerCode($, metadata.config, elemYT, id);
 
-							if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
+							if (elemYT.name /* .prop('tagName') * / === 'youtube-video') {
 								akasha.partial(metadata.config, template ? template : "youtube-embed.html.ejs", {
 									title: item ? item.snippet.title : "",
 									html: player,
@@ -442,10 +502,10 @@ module.exports.mahabhuta = [
 									next();
 								})
 								.catch(err => { error(err); next(err); });
-							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
+							} else if (elemYT.name /* .prop('tagName') * / === 'youtube-video-embed') {
 								$(elemYT).replaceWith(player);
 								next();
-							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
+							} else if (elemYT.name /* .prop('tagName') * / === 'youtube-thumbnail') {
 								var thumbs = item ? item.snippet.thumbnails : undefined;
 								// if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
 								var align = $(elemYT).attr('align') ? $(elemYT).attr('align') : undefined;
@@ -480,7 +540,7 @@ module.exports.mahabhuta = [
 						} else next(new Error("No match for youtube id="+ id));
 					}
 				});
-			}
+			} */
 		}, function(err) {
 			if (err) done(err);
 			else done();
@@ -534,13 +594,48 @@ module.exports.mahabhuta = [
 		var elements = [];
 		$('embed-thumbnail').each((i, elem) => { elements.push(elem); });
 		async.eachSeries(elements, (element, next) => {
-			const template = $(element).attr('template');
+			let template = $(element).attr('template');
+            if (!template) template = "youtube-thumb.html.ejs";
 			const embedurl = $(element).attr('href');
 			if (!embedurl) {
 				return next(new Error('No embed url in '+ metadata.document.path));
 			}
+            var width  = $(element).attr('width') ? $(element).attr('width') : undefined;
+            // var height = $(element).attr('height') ? $(element).attr('height') : undefined;
+            var _class = $(element).attr('class') ? $(element).attr('class') : undefined;
+            var style  = $(element).attr('style') ? $(element).attr('style') : undefined;
+            var align  = $(element).attr('align') ? $(element).attr('align') : undefined;
 			log(element.name +' '+ metadata.document.path +' '+ embedurl);
-			engineDescribe(embedurl).then(description => {
+
+            let embed = new Embed(embedurl, {});
+            urlEngine.getEmbed(embed, (embed) => {
+              if (embed.error) {
+                  return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
+              }
+
+              if (embed.thumbnail_url) {
+                    akasha.partial(metadata.config, template, {
+                        imgwidth: width,
+                        imgalign: align,
+                        imgclass: _class,
+                        style: style,
+                        imgurl: embed.thumbnail_url
+                    })
+                    .then(thumb => {
+                        // log('vimeo-thumbnail '+ thumb);
+                        $(element).replaceWith(thumb);
+                        dirty();
+                        next();
+                    })
+                    .catch(err => { error(err); next(err); });
+              } else {
+                  $(element).replaceWith("<img src='/no-image.gif'/>")
+                  next();
+              }
+              // TODO allow site owner to define substitute image URL
+            });
+
+			/* engineDescribe(embedurl).then(description => {
 				if (!description) {
 					return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
 				}
@@ -576,7 +671,7 @@ module.exports.mahabhuta = [
                     embedurl +' in '+ metadata.document.path
                     +' because '+ e);
     			next();
-            });
+            }); */
 		}, function(err) {
 			if (err) done(err);
 			else done();
@@ -606,7 +701,7 @@ module.exports.mahabhuta = [
 				return next(new Error('No embed url in '+ metadata.document.path));
 			}
 
-            /* let embed = new Embed(embedurl, {});
+            let embed = new Embed(embedurl, {});
             urlEngine.getEmbed(embed, (embed) => {
               if (embed.error) {
                   return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
@@ -636,10 +731,10 @@ module.exports.mahabhuta = [
               .catch(err => { error(err); next(err); });
               // Embed markup
               // console.log(embed.data.html);
-            }); */
+            });
 
 			// console.log(`${element.name} ${template} ${embedurl} ${title}`);
-            engineDescribe(embedurl).then(description => {
+            /* engineDescribe(embedurl).then(description => {
 				// console.log(`${embedurl} ${util.inspect(description)}`);
 				if (!description) {
 					return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
