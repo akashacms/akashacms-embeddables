@@ -395,21 +395,23 @@ var engineDescribe = co.wrap(function* (url, cb) {
 
 var urlEngineGetEmbed = co.wrap(function* (metadata, embedurl) {
 
-    var description = akasha.cache.get('akashacms-embeddables:url-embed-data', embedurl);
+    const cacheKey = 'akashacms-embeddables:url-embed-data';
+
+    var description = akasha.cache.get(cacheKey, embedurl);
     if (description) {
         return description;
     }
 
     let embed = new Embed(embedurl, {});
-    embed = yield new Promise((resolve, reject) => {
+    return yield new Promise((resolve, reject) => {
         try {
             urlEngine.getEmbed(embed, (embed) => {
-                if (!embed) {
+                if (typeof embed === 'undefined' || !embed) {
                     reject(new Error(`url-embed NO DATA for url ${embedurl} in ${metadata.document.path}`));
                 } else if (embed.error) {
                     reject(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
                 } else {
-                    akasha.cache.set('akashacms-embeddables:url-embed-data', embedurl, embed);
+                    akasha.cache.set(cacheKey, embedurl, embed);
                     resolve(embed);
                 }
             });
