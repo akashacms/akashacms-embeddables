@@ -37,7 +37,7 @@ const engine  = new Metaphor.Engine();
 let EmbedEngine = urlEmbed.EmbedEngine;
 let Embed =  urlEmbed.Embed;
 let urlEngine = new EmbedEngine({
-  timeoutMs: 2000,
+  timeoutMs: 20000,
   referrer: '7gen.com'
 });
 urlEngine.registerDefaultProviders();
@@ -393,6 +393,31 @@ var engineDescribe = co.wrap(function* (url, cb) {
     }
 });
 
+var urlEngineGetEmbed = co.wrap(function* (embedurl) {
+
+    var description = akasha.cache.get('akashacms-embeddables:url-embed-data', embedurl);
+    if (description) {
+        return description;
+    }
+
+    let embed = new Embed(embedurl, {});
+    embed = yield new Promise((resolve, reject) {
+        try {
+            urlEngine.getEmbed(embed, (embed) => {
+                if (embed.error) {
+                    return reject(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
+                } else {
+                    akasha.cache.set('akashacms-embeddables:url-embed-data', embedurl, embed);
+                    return resolve(embed);
+                }
+            });
+        } catch (e) { reject(e); }
+    })
+
+});
+
+
+
 module.exports.mahabhuta = [
 
 	function($, metadata, dirty, done) {
@@ -408,12 +433,8 @@ module.exports.mahabhuta = [
             var embedurl = ytGetUrl($, elemYT);
             var template = $(elemYT).attr('template');
 
-            let embed = new Embed(embedurl, {});
-            urlEngine.getEmbed(embed, (embed) => {
-                if (embed.error) {
-                    return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
-                }
-
+            urlEngineGetEmbed(embedurl)
+            .then(embed => {
                 if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
                     akasha.partial(metadata.config, template ? template : "youtube-embed.html.ejs", {
                         title: embed.data.title,
@@ -461,7 +482,9 @@ module.exports.mahabhuta = [
                     })
                     .catch(err => { error(err); next(err); });
                 } else next(new Error("didn't match -video or -video-embed or -thumbnail "+ elemYT.name));
-
+            })
+            .catch(err => {
+                return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ err));
             });
 
             /*
@@ -607,13 +630,9 @@ module.exports.mahabhuta = [
             var align  = $(element).attr('align') ? $(element).attr('align') : undefined;
 			log(element.name +' '+ metadata.document.path +' '+ embedurl);
 
-            let embed = new Embed(embedurl, {});
-            urlEngine.getEmbed(embed, (embed) => {
-              if (embed.error) {
-                  return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
-              }
-
-              if (embed.thumbnail_url) {
+            urlEngineGetEmbed(embedurl)
+            .then(embed => {
+                if (embed.thumbnail_url) {
                     akasha.partial(metadata.config, template, {
                         imgwidth: width,
                         imgalign: align,
@@ -628,11 +647,14 @@ module.exports.mahabhuta = [
                         next();
                     })
                     .catch(err => { error(err); next(err); });
-              } else {
+                } else {
                   $(element).replaceWith("<img src='/no-image.gif'/>")
                   next();
-              }
-              // TODO allow site owner to define substitute image URL
+                }
+                // TODO allow site owner to define substitute image URL
+            })
+            .catch(err => {
+                return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ err));
             });
 
 			/* engineDescribe(embedurl).then(description => {
@@ -701,36 +723,35 @@ module.exports.mahabhuta = [
 				return next(new Error('No embed url in '+ metadata.document.path));
 			}
 
-            let embed = new Embed(embedurl, {});
-            urlEngine.getEmbed(embed, (embed) => {
-              if (embed.error) {
-                  return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
-              }
+            urlEngineGetEmbed(embedurl)
+            .then(embed => {
+                if (!title && embed.data.title) title = embed.data.title;
+                else if (!title && embed.author_name) title = embed.author_name;
+                else if (!title) title = "no-title";
 
-              if (!title && embed.data.title) title = embed.data.title;
-              else if (!title && embed.author_name) title = embed.author_name;
-              else if (!title) title = "no-title";
-
-              akasha.partial(metadata.config, template, {
-                  embedUrl: embedurl,
-                  embedSource: embed.data.provider_name,
-                  title: title,
-                  authorUrl: embed.data.author_url,
-                  authorName: embed.data.author_name,
-                  // publishedAt: item.snippet.publishedAt,
-                  description: "",
-                  embedCode: embed.data.html,
-                  preview: embed.data.html,
-                  fullEmbed: embed
-              })
-              .then(html => {
-                  $(element).replaceWith(html);
-                  dirty();
-                  next();
-              })
-              .catch(err => { error(err); next(err); });
-              // Embed markup
-              // console.log(embed.data.html);
+                akasha.partial(metadata.config, template, {
+                    embedUrl: embedurl,
+                    embedSource: embed.data.provider_name,
+                    title: title,
+                    authorUrl: embed.data.author_url,
+                    authorName: embed.data.author_name,
+                    // publishedAt: item.snippet.publishedAt,
+                    description: "",
+                    embedCode: embed.data.html,
+                    preview: embed.data.html,
+                    fullEmbed: embed
+                })
+                .then(html => {
+                    $(element).replaceWith(html);
+                    dirty();
+                    next();
+                })
+                .catch(err => { error(err); next(err); });
+                // Embed markup
+                // console.log(embed.data.html);
+            })
+            .catch(err => {
+                return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ err));
             });
 
 			// console.log(`${element.name} ${template} ${embedurl} ${title}`);
