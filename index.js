@@ -632,7 +632,7 @@ module.exports.mahabhuta = [
 
             urlEngineGetEmbed(metadata, embedurl)
             .then(embed => {
-                if (embed.thumbnail_url) {
+                if (embed.data.thumbnail_url) {
                     akasha.partial(metadata.config, template, {
                         imgwidth: width,
                         imgalign: align,
