@@ -404,11 +404,13 @@ var urlEngineGetEmbed = co.wrap(function* (metadata, embedurl) {
     embed = yield new Promise((resolve, reject) => {
         try {
             urlEngine.getEmbed(embed, (embed) => {
-                if (embed.error) {
-                    return reject(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
+                if (!embed) {
+                    reject(new Error(`url-embed NO DATA for url ${embedurl} in ${metadata.document.path}`));
+                } else if (embed.error) {
+                    reject(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
                 } else {
                     akasha.cache.set('akashacms-embeddables:url-embed-data', embedurl, embed);
-                    return resolve(embed);
+                    resolve(embed);
                 }
             });
         } catch (e) { reject(e); }
