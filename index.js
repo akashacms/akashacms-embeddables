@@ -37,7 +37,7 @@ const engine  = new Metaphor.Engine();
 let EmbedEngine = urlEmbed.EmbedEngine;
 let Embed =  urlEmbed.Embed;
 let urlEngine = new EmbedEngine({
-  timeoutMs: 20000,
+  timeoutMs: 999999,
   referrer: '7gen.com'
 });
 urlEngine.registerDefaultProviders();
@@ -455,7 +455,7 @@ module.exports.mahabhuta = [
                     $(elemYT).replaceWith(embed.data.html);
                     next();
                 } else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
-                    var thumbs = item ? item.snippet.thumbnails : undefined;
+                    // var thumbs = item ? item.snippet.thumbnails : undefined;
                     // if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
                     var align = $(elemYT).attr('align') ? $(elemYT).attr('align') : undefined;
                     var width = $(elemYT).attr('width')	? $(elemYT).attr('width') : "100%";
