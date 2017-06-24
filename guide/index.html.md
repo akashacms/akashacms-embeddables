@@ -35,7 +35,38 @@ config
     ...
 ```
 
+**Setting your YouTube API key**: This plugin can use the official YouTube API to retrieve information.  Google requires that you register for an API key, which must then be supplied to this plugin.
+
+```
+config.plugin('akashacms-embeddables').youtubeKey = "... youtube key string ...";
+```
+
+
+
 # Custom Tags
 
 
 TODO - Have not written this yet.  Study the source code for clues.
+
+## Embed Metadata
+
+It's very useful to automatically add metadata to the page header related to the embedded thingy.  For example a preview image can be added as OpenGraph metadata which will assist with making good postings on social media websites.
+
+`<youtube-metadata href="YOUTUBE URL">`  This tag probably needs to go away, in any case it retrieves metadata from YouTube and adds `og:image` and `twitter:image` metadata to the page header.
+
+## Embed thumbnail
+
+```
+<embed-thumbnail href="URL" template="TEMPLATE" width="WIDTH" class="CLASS" style="STYLE" align="ALIGN"/>
+```
+
+Retrieves any thumbnail using oEmbed or other means.  The default template is `youtube-thumb.html.ejs`
+
+## Embed the thingy
+
+```
+<framed-embed href="URL" template="TEMPLATE" title="TITLE"/>
+<simple-embed href="URL" template="TEMPLATE" title="TITLE"/>
+```
+
+Embeds the referenced thing in the webpage.  The difference between the two is that `framed-embed` gathers additional information and presents a more comprehensive embeddment.
