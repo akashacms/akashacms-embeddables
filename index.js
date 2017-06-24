@@ -823,7 +823,7 @@ module.exports.mahabhuta = [
 		});
 	},
 
-/* */
+/* TODO Eliminate these in preference for an embed-metadata */
 	function($, metadata, dirty, done) {
 		// <youtube-title id="" href=".."/>
 		var elemsYT = [];
@@ -890,7 +890,7 @@ module.exports.mahabhuta = [
 	},
 /* */
 
-/* */
+/* TODO Eliminate these in preference for an embed-metadata */
 	function($, metadata, dirty, done) {
 		// <vimeo-player url="..." />
 		// <vimeo-thumbnail url="..." />
@@ -971,6 +971,7 @@ module.exports.mahabhuta = [
 	},
 /* */
 
+/* TODO Eliminate these in preference for an embed-metadata */
 	function($, metadata, dirty, done) {
 		// <slideshare-embed href=".."
 		var elements = [];
@@ -1016,6 +1017,7 @@ module.exports.mahabhuta = [
 		});
 	},
 
+/* TODO Eliminate these in preference for an embed-metadata */
 	function($, metadata, dirty, done) {
 		// <twitter-embed href=".."
 		var elements = [];
