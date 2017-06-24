@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2013-2015 David Herron
+ * Copyright 2013-2017 David Herron
  *
  * This file is part of AkashaCMS-embeddables (http://akashacms.com/).
  *
@@ -274,104 +274,86 @@ var ytPlayerCode = function($, config, elemYT, id) {
 };
 
 // http://apiblog.youtube.com/2009/10/oembed-support.html
-var youtubeOEmbedCache = [];
 var youtubeOEmbedData = module.exports.youtubeOEmbedData = function(url2request, done) {
-	if (youtubeOEmbedCache[url2request]) {
-		done(undefined, youtubeOEmbedCache[url2request]);
-	} else {
-		request(url.format({
-			protocol: 'http',
-			host: 'www.youtube.com',
-			pathname: '/oembed',
-			query: {
-				url: url2request,
-				format: "json"
-			}
-		}),
-		function(err, res, body) {
-			if (err) { error(err); done(err); }
-			else {
-				// log('youtubeOEmbedData url= '+ url2request +' result= '+ body);
-				try {
-					youtubeOEmbedCache[url2request] = JSON.parse(body);
-					done(undefined, youtubeOEmbedCache[url2request]);
-				} catch (e) {
-					done(new Error('FAILURE '+ e +' on URL '+ url2request));
-				}
-			}
-		});
-	}
+    var data = akasha.cache.get('akashacms-embeddables:youtubeOEmbedData', url2request);
+    if (data) {
+        done(undefined, data);
+    } else {
+        request(url.format({
+            protocol: 'http',
+            host: 'www.youtube.com',
+            pathname: '/oembed',
+            query: {
+                url: url2request,
+                format: "json"
+            }
+        }),
+        function(err, res, body) {
+            if (err) { error(err); done(err); }
+            else {
+                // log('youtubeOEmbedData url= '+ url2request +' result= '+ body);
+                try {
+                    data = JSON.parse(body);
+                    akasha.cache.set('akashacms-embeddables:youtubeOEmbedData', url2request, data);
+                    done(undefined, data);
+                } catch (e) {
+                    done(new Error('FAILURE '+ e +' on URL '+ url2request));
+                }
+            }
+        });
+    }
 };
 
-var vimeoCache = [];
+/* */
 var vimeoData = module.exports.vimeoData = function(url2request, done) {
-	// log('vimeoData '+ url2request);
-	if (vimeoCache[url2request]) {
-		done(undefined, vimeoCache[url2request]);
-	} else {
-		request(url.format({
-			protocol: 'https',
-			host: 'vimeo.com',
-			pathname: '/api/oembed.json',
-			query: {
-				url: url2request
-			}
-		}),
-		function(err, res, body) {
-			if (err) { error(err); done(err); }
-			else {
-				// log(body);
-				vimeoCache[url2request] = JSON.parse(body);
-				done(undefined, vimeoCache[url2request]);
-			}
-		});
-	}
+    // log('vimeoData '+ url2request);
+    var data = akasha.cache.get('akashacms-embeddables:vimeoData', url2request);
+    if (data) {
+        done(undefined, data);
+    } else {
+        request(url.format({
+            protocol: 'https',
+            host: 'vimeo.com',
+            pathname: '/api/oembed.json',
+            query: { url: url2request }
+        }),
+        function(err, res, body) {
+            if (err) { error(err); done(err); }
+            else {
+                // log(body);
+                data = JSON.parse(body);
+                akasha.cache.set('akashacms-embeddables:vimeoData', url2request, data);
+                done(undefined, data);
+            }
+        });
+    }
 };
+/* */
 
 // http://www.slideshare.net/developers/oembed
-var slideshareCache = [];
 var slideshareData = module.exports.slideshareData = function(url2request, done) {
-	if (slideshareCache[url2request]) {
-		done(undefined, slideshareCache[url2request]);
-	} else {
-		request(url.format({
-			protocol: 'http',
-			host: 'www.slideshare.com',
-			pathname:	'/api/oembed/2',
-			query: {
-				url: url2request,
-				format: "json"
-			}
-		}),
-		function(err, res, body) {
-			if (err) { error(err); done(err); }
-			else {
-				// log(body);
-				slideshareCache[url2request] = JSON.parse(body);
-				done(undefined, slideshareCache[url2request]);
-			}
-		});
-	}
-};
-
-var generateGoogleDocViewerUrl = function(documentUrl) {
-    return url.format({
-        protocol: "http",
-        hostname: "docs.google.com",
-        pathname: "viewer",
-        query: {
-            url: documentUrl, embedded: true
-        }
-    });
-};
-
-var generateViewerJSURL = function(docUrl) {
-    if (docUrl.indexOf('http://') === 0 || docUrl.indexOf('https://') === 0) {
-        return docUrl;
-    } else if (docUrl.indexOf('/') === 0) {
-        return "../../.."+ docUrl;
+    var data = akasha.cache.get('akashacms-embeddables:slideshareData', url2request);
+    if (data) {
+        done(undefined, data);
     } else {
-        return "../../../"+ docUrl;
+        request(url.format({
+            protocol: 'http',
+            host: 'www.slideshare.com',
+            pathname:	'/api/oembed/2',
+            query: {
+                url: url2request,
+                format: "json"
+            }
+        }),
+        function(err, res, body) {
+            if (err) { error(err); done(err); }
+            else {
+                // console.log(`slideshareData ${url2request} got ${util.inspect(body)}`);
+                data = JSON.parse(body);
+                akasha.cache.set('akashacms-embeddables:slideshareData', url2request, data);
+                done(undefined, data);
+            }
+        });
     }
 };
 
@@ -394,6 +376,21 @@ var engineDescribe = co.wrap(function* (url, cb) {
 });
 
 var urlEngineGetEmbed = co.wrap(function* (metadata, embedurl) {
+
+    var urlP = url.parse(embedurl);
+    if (urlP.hostname.toLowerCase().endsWith('slideshare.net')) {
+        var description = yield engineDescribe(embedurl);
+        description.data = {
+            title: description.title,
+            provider_name: description.site_name,
+            author_url: description.url,
+            author_name: description.url,
+            html: description.embed.html
+        };
+        return Promise.resolve(description);
+    } /* else {
+        console.log(`urlEngineGetEmbed not slideshare.net ${util.inspect(urlP)}`);
+    } */
 
     const cacheKey = 'akashacms-embeddables:url-embed-data';
 
@@ -424,6 +421,7 @@ var urlEngineGetEmbed = co.wrap(function* (metadata, embedurl) {
 
 module.exports.mahabhuta = [
 
+/*
 	function($, metadata, dirty, done) {
 		// <youtube-video href=".."/>  TBD: autoplay, thumbnail+lightbox
 		var elemsYT = [];
@@ -439,7 +437,7 @@ module.exports.mahabhuta = [
 
             urlEngineGetEmbed(metadata, embedurl)
             .then(embed => {
-                if (elemYT.name /* .prop('tagName') */ === 'youtube-video') {
+                if (elemYT.name === 'youtube-video') {
                     akasha.partial(metadata.config, template ? template : "youtube-embed.html.ejs", {
                         title: embed.data.title,
                         html: embed.data.html,
@@ -451,10 +449,10 @@ module.exports.mahabhuta = [
                         next();
                     })
                     .catch(err => { error(err); next(err); });
-                } else if (elemYT.name /* .prop('tagName') */ === 'youtube-video-embed') {
+                } else if (elemYT.name === 'youtube-video-embed') {
                     $(elemYT).replaceWith(embed.data.html);
                     next();
-                } else if (elemYT.name /* .prop('tagName') */ === 'youtube-thumbnail') {
+                } else if (elemYT.name === 'youtube-thumbnail') {
                     // var thumbs = item ? item.snippet.thumbnails : undefined;
                     // if (_class === 'embed-yt-video') _class = 'embed-yt-thumb';
                     var align = $(elemYT).attr('align') ? $(elemYT).attr('align') : undefined;
@@ -567,12 +565,13 @@ module.exports.mahabhuta = [
 						} else next(new Error("No match for youtube id="+ id));
 					}
 				});
-			} */
+			} * /
 		}, function(err) {
 			if (err) done(err);
 			else done();
 		});
 	},
+*/
 
 	function($, metadata, dirty, done) {
 		// <youtube-metadata id="" href=".."/>
@@ -622,6 +621,7 @@ module.exports.mahabhuta = [
 		$('embed-thumbnail').each((i, elem) => { elements.push(elem); });
 		async.eachSeries(elements, (element, next) => {
 			let template = $(element).attr('template');
+            // TODO change this default template to embed-thumbnail.html.ejs
             if (!template) template = "youtube-thumb.html.ejs";
 			const embedurl = $(element).attr('href');
 			if (!embedurl) {
@@ -632,7 +632,7 @@ module.exports.mahabhuta = [
             var _class = $(element).attr('class') ? $(element).attr('class') : undefined;
             var style  = $(element).attr('style') ? $(element).attr('style') : undefined;
             var align  = $(element).attr('align') ? $(element).attr('align') : undefined;
-			log(element.name +' '+ metadata.document.path +' '+ embedurl);
+            // log(element.name +' '+ metadata.document.path +' '+ embedurl);
 
             urlEngineGetEmbed(metadata, embedurl)
             .then(embed => {
@@ -711,6 +711,7 @@ module.exports.mahabhuta = [
 		$('simple-embed').each((i, elem) => { elements.push(elem); });
 		// console.log(`framed/simple-embed ${elements.length}`);
 		async.eachSeries(elements, (element, next) => {
+            // TODO  width="WIDTH" class="CLASS" style="STYLE" align="ALIGN"
 			var template = $(element).attr('template');
 			var embedurl = $(element).attr('href');
 			var title    = $(element).attr('title');
@@ -729,7 +730,10 @@ module.exports.mahabhuta = [
 
             urlEngineGetEmbed(metadata, embedurl)
             .then(embed => {
-                if (!title && embed.data.title) title = embed.data.title;
+                // console.log(`after urlEngineGetEmbed ${embedurl} ${util.inspect(title)} ${util.inspect(embed)}`);
+
+                if (!title && embed.data && embed.data.title) title = embed.data.title;
+                // else if (!title && embed.title) title = embed.title;
                 else if (!title && embed.author_name) title = embed.author_name;
                 else if (!title) title = "no-title";
 
@@ -742,7 +746,7 @@ module.exports.mahabhuta = [
                     // publishedAt: item.snippet.publishedAt,
                     description: "",
                     embedCode: embed.data.html,
-                    preview: embed.data.html,
+                    preview: embed.preview ? embed.preview : embed.data.html,
                     fullEmbed: embed
                 })
                 .then(html => {
@@ -819,6 +823,7 @@ module.exports.mahabhuta = [
 		});
 	},
 
+/* */
 	function($, metadata, dirty, done) {
 		// <youtube-title id="" href=".."/>
 		var elemsYT = [];
@@ -844,20 +849,20 @@ module.exports.mahabhuta = [
                         dirty();
 
 						if (item) {
-							if (elemYT.name /* .prop('tagName') */ === 'youtube-title') {
+							if (elemYT.name === 'youtube-title') {
 								$(elemYT).replaceWith(item.snippet.title);
 								next();
-							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-author') {
+							} else if (elemYT.name === 'youtube-author') {
 								$(elemYT).replaceWith(item.snippet.channelTitle);
 								next();
-							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-description') {
+							} else if (elemYT.name  === 'youtube-description') {
 								$(elemYT).replaceWith(item.snippet.description);
 								next();
-							} else if (elemYT.name /* .prop('tagName') */ === 'youtube-publ-date') {
+							} else if (elemYT.name === 'youtube-publ-date') {
 								// TODO fix this to parse & print nicely
 								$(elemYT).replaceWith(item.snippet.publishedAt);
 								next();
-							}  else if (elemYT.name /* .prop('tagName') */ === 'framed-youtube-player') {
+							}  else if (elemYT.name === 'framed-youtube-player') {
 								akasha.partial(metadata.config, 'framed-youtube-player.html.ejs', {
 									youtubeUrl: yturl,
 									title: item.snippet.title,
@@ -883,7 +888,9 @@ module.exports.mahabhuta = [
 			else done();
 		});
 	},
+/* */
 
+/* */
 	function($, metadata, dirty, done) {
 		// <vimeo-player url="..." />
 		// <vimeo-thumbnail url="..." />
@@ -962,6 +969,7 @@ module.exports.mahabhuta = [
 			if (err) done(err); else done();
 		});
 	},
+/* */
 
 	function($, metadata, dirty, done) {
 		// <slideshare-embed href=".."
@@ -974,6 +982,7 @@ module.exports.mahabhuta = [
 				if (err) next(err);
 				else {
 					if (element.name === 'slideshare-embed') {
+                        // console.log(`slideshare-embed ${href} ${util.inspect(result)}`);
 						akasha.partial(metadata.config, 'slideshare-embed.html.ejs', {
 							title: result.title,
 							author_url: result.author_url,
@@ -1051,62 +1060,4 @@ module.exports.mahabhuta = [
 		});
 	},
 
-	function($, metadata, dirty, done) {
-		var href, width, height;
-		// <googledocs-viewer href="..." />
-		$('googledocs-viewer').each(function(i, elem) {
-			href = $(this).attr("href");
-			if (!href) done(new Error("URL required for googledocs-viewer"));
-			else {
-				$(this).replaceWith(
-					akasha.partialSync(metadata.config, "google-doc-viewer.html.ejs", {
-						docViewerUrl: generateGoogleDocViewerUrl(href)
-					})
-				);
-			}
-		});
-		// <googledocs-view-link href="..." >Anchor Text</googledocs-view-link>
-		$('googledocs-view-link').each(function(i, elem) {
-			href = $(this).attr("href");
-			if (!href) return done(new Error("URL required for googledocs-view-link"));
-			var anchorText = $(this).text();
-			if (!anchorText) anchorText = "Click Here";
-			return $(this).replaceWith(
-				akasha.partialSync(metadata.config, "google-doc-viewer-link.html.ejs", {
-					docViewerUrl: generateGoogleDocViewerUrl(href),
-					anchorText: anchorText
-				})
-			);
-		});
-		// <docviewer href="..." width="..." height="..."/>
-		$('docviewer').each(function(i, elem) {
-			href = $(this).attr("href");
-			if (!href) return done(new Error("URL required for docviewer"));
-			width = $(this).attr("width");
-			if (!width) width = "100%";
-			height = $(this).attr("height");
-			if (!height) height = "900px";
-			// console.log(`docviewer ${href} ${width} ${height}`);
-			return $(this).replaceWith(
-				akasha.partialSync(metadata.config, "viewerjs-embed.html.ejs", {
-					docUrl: generateViewerJSURL(href),
-					width: width, height: height
-				})
-			);
-		});
-		// <docviewer-link href="..." >Anchor Text</docviewer-link>
-		$('docviewer-link').each(function(i, elem) {
-			href = $(this).attr("href");
-			if (!href) return done(new Error("URL required for docviewer"));
-			var anchorText = $(this).text();
-			if (!anchorText) anchorText = "Click Here";
-			return $(this).replaceWith(
-				akasha.partialSync(metadata.config, "viewerjs-link.html.ejs", {
-					docUrl: generateViewerJSURL(href),
-					anchorText: anchorText
-				})
-			);
-		});
-		done();
-	}
 ];
