@@ -14,13 +14,10 @@ Add the following to `package.json`
 ```
 "dependencies": {
       ...
-      "akashacms-embeddables": "akashacms/akashacms-embeddables#akasharender",
+      "akashacms-embeddables": ">=0.6",
       ...
 }
 ```
-
-
-The AkashaRender version of `akashacms-embeddables` has not been published to `npm` yet, and therefore must be referenced this way.
 
 Once added to `package.json` run: `npm install`
 
@@ -45,8 +42,20 @@ config.plugin('akashacms-embeddables').youtubeKey = "... youtube key string ..."
 
 # Custom Tags
 
+TODO:
 
-TODO - Have not written this yet.  Study the source code for clues.
+```
+<embed-resource href="URL" class="CLASS-NAME" style="STYLE" title="TITLE TO OVERRIDE" template="TEMPLATE" width="WIDTH" height="HEIGHT">
+   Descriptive text if appropriate
+</embed-resource>
+```
+
+This would look up the data, selecting the mechanism based on the URL.  For example some sites work great with oEmbed, others with OpenGraph, others with private API's, etc.  
+
+The `template=` attribute specifies how to handle/display the thing being displayed.
+
+Other tags like `<framed-embed>` could build on top of this by using a defined template for the purpose.
+
 
 ## Embed Metadata
 
