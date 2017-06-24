@@ -11,13 +11,17 @@
     "type": "git",
     "url": "git://github.com/akashacms/akashacms-embeddables.git"
   },
-  "version": "0.4.3",
+  "version": "0.6.0",
   "engines": {
-    "node": ">=0.10.1"
+    "node": ">=6.1"
   },
   "dependencies": {
-    "youtube-node": "*",
+    "async": "*",
+    "debug": "^2.2.0",
     "request": "*",
-    "async": "*"
+    "youtube-node": "*",
+    "metaphor": ">=3.4.1",
+    "url-embed": "*",
+    "co": "*"
   }
 }
