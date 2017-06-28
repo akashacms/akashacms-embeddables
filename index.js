@@ -59,7 +59,7 @@ oembetter.addFallback(function(url, options, callback) {
     .catch(err => { callback(err); });
 });
 
-var fetchData = (url) => {
+var fetchData = (embedurl) => {
     return new Promise((resolve, reject) => {
         oembetter.fetch(embedurl, (err, result) => {
             if (err) return reject(err);
