@@ -17,11 +17,13 @@
   },
   "dependencies": {
     "async": "*",
+    "co": "*",
     "debug": "^2.2.0",
-    "request": "*",
-    "youtube-node": "*",
     "metaphor": ">=3.4.1",
+    "oembetter": "^0.1.15",
+    "meta-extractor": "*",
+    "request": "*",
     "url-embed": "*",
-    "co": "*"
+    "youtube-node": "*"
   }
 }
