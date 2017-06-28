@@ -26,6 +26,50 @@ const co       = require('co');
 const async    = require('async');
 const request  = require('request');
 const akasha   = require('akasharender');
+const mahabhuta = require('mahabhuta');
+
+const extract = require('meta-extractor');
+const oembetter = require('oembetter')();
+
+const doExtract = (url) => {
+    return new Promise((resolve, reject) => {
+        extract({ uri: url }, (err, res) => {
+            if (err) { reject(err); }
+            else { resolve(res); }
+        });
+    })
+};
+
+oembetter.addAfter((url, options, response, callback) => {
+    doExtract(url)
+    .then(result => {
+        response.metadata = result;
+        callback();
+    })
+    .catch(err => { callback(); });
+});
+
+oembetter.addFallback(function(url, options, callback) {
+    doExtract(url)
+    .then(result => {
+        callback(undefined, {
+            metadata: result
+        });
+    })
+    .catch(err => { callback(err); });
+});
+
+var fetchData = (url) => {
+    return new Promise((resolve, reject) => {
+        oembetter.fetch(embedurl, (err, result) => {
+            if (err) return reject(err);
+            else resolve(result);
+        }
+        );
+    });
+}
+
+
 const Metaphor = require('metaphor');
 const urlEmbed = require('url-embed');
 
@@ -45,9 +89,11 @@ urlEngine.registerDefaultProviders();
 const log     = require('debug')('akasha:embeddables-plugin');
 const error   = require('debug')('akasha:error-embeddables-plugin');
 
+const pluginName = "akashacms-embeddables";
+
 module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 	constructor() {
-		super("akashacms-embeddables");
+		super(pluginName);
 	}
 
 	configure(config) {
@@ -75,7 +121,7 @@ var ytVidInfo = module.exports.youtubeVidInfo = function(config, id, done) {
         // util.log('ytVidInfo id='+ id +' '+ util.inspect(ytVidz[id]));
         done(null, ytVidz[id]);
     } else {
-		if (config.plugin("akashacms-embeddables").youtubeKey) {
+		if (config.plugin(pluginName).youtubeKey) {
 			// If we have a youtubeKey then it's safe to call the youtube API
 			youtube.getById(id, function(resultData) {
 				// util.log('ytVidInfo id='+ id +' '+ util.inspect(resultData));
@@ -275,7 +321,7 @@ var ytPlayerCode = function($, config, elemYT, id) {
 
 // http://apiblog.youtube.com/2009/10/oembed-support.html
 var youtubeOEmbedData = module.exports.youtubeOEmbedData = function(url2request, done) {
-    var data = akasha.cache.get('akashacms-embeddables:youtubeOEmbedData', url2request);
+    var data = akasha.cache.get(pluginName+':youtubeOEmbedData', url2request);
     if (data) {
         done(undefined, data);
     } else {
@@ -294,7 +340,7 @@ var youtubeOEmbedData = module.exports.youtubeOEmbedData = function(url2request,
                 // log('youtubeOEmbedData url= '+ url2request +' result= '+ body);
                 try {
                     data = JSON.parse(body);
-                    akasha.cache.set('akashacms-embeddables:youtubeOEmbedData', url2request, data);
+                    akasha.cache.set(pluginName+':youtubeOEmbedData', url2request, data);
                     done(undefined, data);
                 } catch (e) {
                     done(new Error('FAILURE '+ e +' on URL '+ url2request));
@@ -307,7 +353,7 @@ var youtubeOEmbedData = module.exports.youtubeOEmbedData = function(url2request,
 /* */
 var vimeoData = module.exports.vimeoData = function(url2request, done) {
     // log('vimeoData '+ url2request);
-    var data = akasha.cache.get('akashacms-embeddables:vimeoData', url2request);
+    var data = akasha.cache.get(pluginName+':vimeoData', url2request);
     if (data) {
         done(undefined, data);
     } else {
@@ -322,7 +368,7 @@ var vimeoData = module.exports.vimeoData = function(url2request, done) {
             else {
                 // log(body);
                 data = JSON.parse(body);
-                akasha.cache.set('akashacms-embeddables:vimeoData', url2request, data);
+                akasha.cache.set(pluginName+':vimeoData', url2request, data);
                 done(undefined, data);
             }
         });
@@ -332,7 +378,7 @@ var vimeoData = module.exports.vimeoData = function(url2request, done) {
 
 // http://www.slideshare.net/developers/oembed
 var slideshareData = module.exports.slideshareData = function(url2request, done) {
-    var data = akasha.cache.get('akashacms-embeddables:slideshareData', url2request);
+    var data = akasha.cache.get(pluginName+':slideshareData', url2request);
     if (data) {
         done(undefined, data);
     } else {
@@ -350,7 +396,7 @@ var slideshareData = module.exports.slideshareData = function(url2request, done)
             else {
                 // console.log(`slideshareData ${url2request} got ${util.inspect(body)}`);
                 data = JSON.parse(body);
-                akasha.cache.set('akashacms-embeddables:slideshareData', url2request, data);
+                akasha.cache.set(pluginName+':slideshareData', url2request, data);
                 done(undefined, data);
             }
         });
@@ -358,7 +404,7 @@ var slideshareData = module.exports.slideshareData = function(url2request, done)
 };
 
 var engineDescribe = co.wrap(function* (url, cb) {
-    var description = akasha.cache.get('akashacms-embeddables:describe', url);
+    var description = akasha.cache.get(pluginName+':describe', url);
     if (description) {
         log('engineDescribe had cache for '+ url);
         return description;
@@ -367,7 +413,7 @@ var engineDescribe = co.wrap(function* (url, cb) {
         return yield new Promise((resolve, reject) => {
             try {
                 engine.describe(url, description => {
-                    akasha.cache.set('akashacms-embeddables:describe', url, description);
+                    akasha.cache.set(pluginName+':describe', url, description);
                     // console.log(`engineDescribe ${url} ${util.inspect(description)}`);
                     resolve(description);
                 });
@@ -397,7 +443,7 @@ var urlEngineGetEmbed = co.wrap(function* (metadata, embedurl) {
         console.log(`urlEngineGetEmbed not slideshare.net || facebook.com ${util.inspect(urlP)}`);
     } */
 
-    const cacheKey = 'akashacms-embeddables:url-embed-data';
+    const cacheKey = pluginName+':url-embed-data';
 
     var description = akasha.cache.get(cacheKey, embedurl);
     if (description) {
@@ -423,8 +469,74 @@ var urlEngineGetEmbed = co.wrap(function* (metadata, embedurl) {
 });
 
 
+module.exports.mahabhuta = new mahabhuta.MahafuncArray(pluginName, {});
 
-module.exports.mahabhuta = [
+class EmbedResourceContent extends mahabhuta.CustomElement {
+    get elementName() { return "embed-resource"; }
+    process($element, metadata, dirty) {
+        dirty();
+        var href = $element.attr("href");
+        if (!href) throw new Error("URL required for embed-resource");
+        var template = $element.attr('template');
+        if (!template) template = "simple-embed.html.ejs";
+        var width  = $element.attr('width') ? $element.attr('width') : undefined;
+        // var height = $element.attr('height') ? $element.attr('height') : undefined;
+        var _class = $element.attr('class') ? $element.attr('class') : undefined;
+        var style  = $element.attr('style') ? $element.attr('style') : undefined;
+        var align  = $element.attr('align') ? $element.attr('align') : undefined;
+        var title  = $element.attr('title') ? $element.attr('title') : undefined;
+
+        // TODO need a function that brings together several things
+        //   by default use url-engine
+        //   if YouTube URL and we have YouTube API key, then call YouTube API
+        //   for specific other URL's, call Metaphor or oembetter
+        //   depending on what was called, harmonize the data to a known structure
+
+        // Maybe instead ...
+        //   by default use oembetter
+        //   if YouTube URL and we have YouTube API key, then call YouTube API
+        //   for specific other URL's, call Metaphor or oembetter
+        //   depending on what was called, harmonize the data to a known structure
+
+        return fetchData(href)
+        .then(data => {
+            var mdata = {
+                embedCode: data.html,
+                title: data.metadata && data.metadata.title ? data.metadata.title : "",
+                embedUrl: data.author_url ? data.author_url : href,
+                embedSource: data.author_name ? data.author_name : data.author_url
+            };
+            if (data.metadata && data.metadata.ogDescription) {
+                mdata.description = data.metadata.ogDescription;
+            } else if (data.metadata && data.metadata.description) {
+                mdata.description = data.metadata.description;
+            } else if (data.metadata && data.metadata.twitterDescription) {
+                mdata.description = data.metadata.twitterDescription;
+            } else {
+                mdata.description = "";
+            }
+            if (data.metadata && data.metadata.ogImage) {
+                mdata.imageUrl = data.metadata.ogImage;
+            } else if (data.metadata && data.metadata.twitterImage) {
+                mdata.imageUrl = data.metadata.twitterImage;
+            } else if (data.thumbnail_url) {
+                mdata.imageUrl = data.thumbnail_url;
+            }
+            return akasha.partial(metadata.config, template, mdata);
+        });
+        /* return urlEngineGetEmbed(metadata, href)
+        .then(embedData => {
+            // TODO define an object combining information from urlEngineGetEmbed
+            // and the options passed in the tag
+            return akasha.partial(metadata.config, template, {
+
+            });
+        }) */
+    }
+}
+module.exports.mahabhuta.addMahafunc(new EmbedResourceContent());
+
+module.exports.mahabhuta.addMahafunc([
 
 /*
 	function($, metadata, dirty, done) {
@@ -1067,4 +1179,4 @@ module.exports.mahabhuta = [
 		});
 	},
 
-];
+]);
