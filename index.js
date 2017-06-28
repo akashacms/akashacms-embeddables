@@ -368,9 +368,13 @@ var engineDescribe = co.wrap(function* (url, cb) {
             try {
                 engine.describe(url, description => {
                     akasha.cache.set('akashacms-embeddables:describe', url, description);
+                    // console.log(`engineDescribe ${url} ${util.inspect(description)}`);
                     resolve(description);
                 });
-            } catch (e) { reject(e); }
+            } catch (e) {
+                // console.error(`engineDescribe FAIL ${url} ${e}`);
+                reject(e);
+            }
         });
     }
 });
@@ -378,6 +382,7 @@ var engineDescribe = co.wrap(function* (url, cb) {
 var urlEngineGetEmbed = co.wrap(function* (metadata, embedurl) {
 
     var urlP = url.parse(embedurl);
+    // console.log(`urlEngineGetEmbed urlP ${util.inspect(urlP)}`);
     if (urlP.hostname.toLowerCase().endsWith('slideshare.net')) {
         var description = yield engineDescribe(embedurl);
         description.data = {
@@ -385,11 +390,11 @@ var urlEngineGetEmbed = co.wrap(function* (metadata, embedurl) {
             provider_name: description.site_name,
             author_url: description.url,
             author_name: description.url,
-            html: description.embed.html
+            html: description.embed && description.embed.html ? description.embed.html : description.preview
         };
         return Promise.resolve(description);
     } /* else {
-        console.log(`urlEngineGetEmbed not slideshare.net ${util.inspect(urlP)}`);
+        console.log(`urlEngineGetEmbed not slideshare.net || facebook.com ${util.inspect(urlP)}`);
     } */
 
     const cacheKey = 'akashacms-embeddables:url-embed-data';
