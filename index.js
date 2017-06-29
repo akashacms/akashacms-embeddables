@@ -59,24 +59,6 @@ oembetter.addFallback(function(url, options, callback) {
     .catch(err => { callback(err); });
 });
 
-
-
-/* const Metaphor = require('metaphor');
-const urlEmbed = require('url-embed'); */
-
-const YouTube = require('youtube-node');
-const youtube = new YouTube();
-
-/* const engine  = new Metaphor.Engine();
-
-let EmbedEngine = urlEmbed.EmbedEngine;
-let Embed =  urlEmbed.Embed;
-let urlEngine = new EmbedEngine({
-  timeoutMs: 999999,
-  referrer: '7gen.com'
-});
-urlEngine.registerDefaultProviders(); */
-
 const log     = require('debug')('akasha:embeddables-plugin');
 const error   = require('debug')('akasha:error-embeddables-plugin');
 
@@ -122,360 +104,6 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
     }
 };
 
-/* var ytVidz = [];
-var ytVidInfo = module.exports.youtubeVidInfo = function(config, id, done) {
-    if (ytVidz[id]) {
-        // util.log('ytVidInfo id='+ id +' '+ util.inspect(ytVidz[id]));
-        done(null, ytVidz[id]);
-    } else {
-		if (config.plugin(pluginName).youtubeKey) {
-			// If we have a youtubeKey then it's safe to call the youtube API
-			youtube.getById(id, function(resultData) {
-				// util.log('ytVidInfo id='+ id +' '+ util.inspect(resultData));
-				if (!resultData) {
-					log("No resultData for id "+ id);
-					done(new Error("No resultData for id "+ id));
-				} else if (resultData.error) {
-					error(resultData.error.message);
-					done(new Error(resultData.error.message +' for id '+ id));
-				} else {
-					ytVidz[id] = resultData;
-					done(null, resultData);
-				}
-			});
-		} else {
-			// otherwise we call youtube's oEmbed API ... then deal with the limited returned data
-			youtubeOEmbedData(url.format({
-				protocol: 'https',
-				hostname: 'www.youtube.com',
-				pathname: '/watch',
-				query: {
-					v: id
-				}
-			}), function(err, results) {
-				if (err) done(err);
-				else {
-					// Construct a fake response as if we'd called the youtube API
-					done(null, {
-						oEmbedData: results,  // include the oEmbed data
-						kind: 'youtube#videoListResponse',
-						pageInfo: { totalResults: 1, resultsPerPage: 1 },
-						items: [ {
-							id: id,
-							kind: 'youtube#video',
-							snippet: {
-								title: results.title,
-								description: "",
-								thumbnails: {
-									"default": {
-										url: results.thumbnail_url,
-										width: results.thumbnail_width,
-										height: results.thumbnail_height
-									}
-								},
-								channelTitle: results.author_name,
-								publishedAt: ""
-							}
-						} ]
-					});
-				}
-			});
-		}
-    }
-}; */
-
-/* var ytGetUrl = function($, elemYT) {
-	var newurl;
-	if (typeof elemYT === 'string') {
-		// util.log('ytGetUrl elemYT='+ elemYT);
-	    return elemYT;
-	} else if (elemYT && $(elemYT).attr('href')) {
-        newurl =  $(elemYT).attr('href');
-		// util.log('ytGetUrl href='+ newurl);
-		return newurl;
-    } else if (elemYT && $(elemYT).attr('url')) {
-        newurl = $(elemYT).attr('url');
-		// util.log('ytGetUrl url='+ newurl);
-		return newurl;
-    } else if (elemYT && $(elemYT).attr('id')) {
-        newurl = url.format({
-			protocol: 'https',
-			hostname: 'www.youtube.com',
-			pathname: '/watch',
-			query: {
-				v: $(elemYT).attr('id')
-			}
-		});
-		// util.log('ytGetUrl newurl='+ newurl);
-		return newurl;
-    } else {
-		// util.log('ytGetUrl NULL');
-        return null;
-    }
-}; */
-
-/* var ytGetId = function($, elemYT) {
-    var id;
-	var idFromUrl = function(href) {
-		var yturl = url.parse(href, true);
-		// util.log('idFromUrl '+ util.inspect(yturl));
-        if (yturl.query && yturl.query.v) {
-            // util.log('returning ' +yturl.query.v);
-            return yturl.query.v;
-        } else {
-            // util.log('returning NULL ');
-			return null;
-		}
-	};
-	var _yturl;
-	if (typeof elemYT === 'string') {
-		return idFromUrl(elemYT);
-	} else if (elemYT && $(elemYT).attr('id')) {
-        id = $(elemYT).attr('id');
-    } else if (elemYT && $(elemYT).attr('href')) {
-        _yturl = $(elemYT).attr('href');
-		// util.log('ytGetId href='+ _yturl);
-		return idFromUrl(_yturl);
-    } else if (elemYT && $(elemYT).attr('url')) {
-        _yturl = $(elemYT).attr('url');
-		// util.log('ytGetId url='+ _yturl);
-		return idFromUrl(_yturl);
-    }
-	// util.log('ytGetId id='+ id);
-    return id;
-}; */
-
-/* var ytBestThumbnail = function(thumbs) {
-    if (thumbs && thumbs.standard && thumbs.standard.url) {
-        return thumbs.standard.url;
-    } else if (thumbs && thumbs.high && thumbs.high.url) {
-        return thumbs.high.url;
-    } else if (thumbs && thumbs.medium && thumbs.medium.url) {
-        return thumbs.medium.url;
-    } else if (thumbs && thumbs["default"] && thumbs["default"].url) {
-        return thumbs["default"].url;
-    } else {
-        return "";
-    }
-}; */
-
-
-/* var ytPlayerCode = function($, config, elemYT, id) {
-
-	var width = $(elemYT).attr('width')   ? $(elemYT).attr('width')  : undefined;
-	var height = $(elemYT).attr('height') ? $(elemYT).attr('height') : undefined;
-	var _class = $(elemYT).attr('class')  ? $(elemYT).attr('class')  : undefined;
-	var style = $(elemYT).attr('style')   ? $(elemYT).attr('style')  : undefined;
-
-	if (!width && !height) {
-		width = "480";
-		height = "270";
-	}
-
-	var yturl = {
-		protocol: "http",
-		hostname: "www.youtube.com",
-		pathname: "/embed/"+ id,
-		query: []
-	};
-
-	/*
-	TODO update akashacms.com
-	TODO add a page of youtube embed examples
-
-	TODO add new section to akashacms.com - layout examples - first is the youtube layout
-	* /
-
-	// These options are explained here: https://developers.google.com/youtube/player_parameters
-
-	if ($(elemYT).attr('autohide')) yturl.query.autohide = $(elemYT).attr('autohide');
-	if ($(elemYT).attr('autoplay')) yturl.query.autoplay = $(elemYT).attr('autoplay');
-	if ($(elemYT).attr('cc_load_policy')) yturl.query.cc_load_policy = $(elemYT).attr('cc_load_policy');
-	if ($(elemYT).attr('color')) 	yturl.query.color = $(elemYT).attr('color');
-	if ($(elemYT).attr('controls')) yturl.query.controls = $(elemYT).attr('controls');
-	if ($(elemYT).attr('disablekb')) yturl.query.disablekb = $(elemYT).attr('disablekb');
-	if ($(elemYT).attr('enablejsapi')) yturl.query.enablejsapi = $(elemYT).attr('enablejsapi');
-	if ($(elemYT).attr('end'))      yturl.query.end = $(elemYT).attr('end');
-	if ($(elemYT).attr('fs'))       yturl.query.fs = $(elemYT).attr('fs');
-	if ($(elemYT).attr('hl'))       yturl.query.hl = $(elemYT).attr('hl');
-	if ($(elemYT).attr('iv_load_policy')) yturl.query.iv_load_policy = $(elemYT).attr('iv_load_policy');
-	if ($(elemYT).attr('list'))     yturl.query.list = $(elemYT).attr('list');
-	if ($(elemYT).attr('listType')) yturl.query.listType = $(elemYT).attr('listType');
-	if ($(elemYT).attr('loop'))     yturl.query.loop = $(elemYT).attr('loop');
-	if ($(elemYT).attr('modestbranding')) yturl.query.modestbranding = $(elemYT).attr('modestbranding');
-	if ($(elemYT).attr('origin'))   yturl.query.origin = $(elemYT).attr('origin');
-	if ($(elemYT).attr('playerapiid')) yturl.query.playerapiid = $(elemYT).attr('playerapiid');
-	if ($(elemYT).attr('playlist')) yturl.query.playlist = $(elemYT).attr('playlist');
-	if ($(elemYT).attr('playsinline')) yturl.query.playsinline = $(elemYT).attr('playsinline');
-	if ($(elemYT).attr('rel'))      yturl.query.rel = $(elemYT).attr('rel');
-	if ($(elemYT).attr('showinfo')) yturl.query.showinfo = $(elemYT).attr('showinfo');
-	if ($(elemYT).attr('start'))    yturl.query.start = $(elemYT).attr('start');
-	if ($(elemYT).attr('theme'))    yturl.query.theme = $(elemYT).attr('theme');
-
-	yturl = url.format(yturl);
-	var code = akasha.partialSync(config, "youtube-embed-code.html.ejs", {
-		idYouTube: id,
-		width: width,
-		height: height,
-		ytclass: _class,
-		style: style,
-		frameborder: "0",
-		yturl
-	});
-	// log('embedCode for '+ yturl +' = '+ code);
-	return code;
-}; */
-
-// http://apiblog.youtube.com/2009/10/oembed-support.html
-/* var youtubeOEmbedData = module.exports.youtubeOEmbedData = function(url2request, done) {
-    var data = akasha.cache.get(pluginName+':youtubeOEmbedData', url2request);
-    if (data) {
-        done(undefined, data);
-    } else {
-        request(url.format({
-            protocol: 'http',
-            host: 'www.youtube.com',
-            pathname: '/oembed',
-            query: {
-                url: url2request,
-                format: "json"
-            }
-        }),
-        function(err, res, body) {
-            if (err) { error(err); done(err); }
-            else {
-                // log('youtubeOEmbedData url= '+ url2request +' result= '+ body);
-                try {
-                    data = JSON.parse(body);
-                    akasha.cache.set(pluginName+':youtubeOEmbedData', url2request, data);
-                    done(undefined, data);
-                } catch (e) {
-                    done(new Error('FAILURE '+ e +' on URL '+ url2request));
-                }
-            }
-        });
-    }
-}; */
-
-/* * /
-var vimeoData = module.exports.vimeoData = function(url2request, done) {
-    // log('vimeoData '+ url2request);
-    var data = akasha.cache.get(pluginName+':vimeoData', url2request);
-    if (data) {
-        done(undefined, data);
-    } else {
-        request(url.format({
-            protocol: 'https',
-            host: 'vimeo.com',
-            pathname: '/api/oembed.json',
-            query: { url: url2request }
-        }),
-        function(err, res, body) {
-            if (err) { error(err); done(err); }
-            else {
-                // log(body);
-                data = JSON.parse(body);
-                akasha.cache.set(pluginName+':vimeoData', url2request, data);
-                done(undefined, data);
-            }
-        });
-    }
-};
-/* */
-
-// http://www.slideshare.net/developers/oembed
-/* var slideshareData = module.exports.slideshareData = function(url2request, done) {
-    var data = akasha.cache.get(pluginName+':slideshareData', url2request);
-    if (data) {
-        done(undefined, data);
-    } else {
-        request(url.format({
-            protocol: 'http',
-            host: 'www.slideshare.com',
-            pathname:	'/api/oembed/2',
-            query: {
-                url: url2request,
-                format: "json"
-            }
-        }),
-        function(err, res, body) {
-            if (err) { error(err); done(err); }
-            else {
-                // console.log(`slideshareData ${url2request} got ${util.inspect(body)}`);
-                data = JSON.parse(body);
-                akasha.cache.set(pluginName+':slideshareData', url2request, data);
-                done(undefined, data);
-            }
-        });
-    }
-}; */
-
-/* var engineDescribe = co.wrap(function* (url, cb) {
-    var description = akasha.cache.get(pluginName+':describe', url);
-    if (description) {
-        log('engineDescribe had cache for '+ url);
-        return description;
-    } else {
-        log('engineDescribe no cache for '+ url);
-        return yield new Promise((resolve, reject) => {
-            try {
-                engine.describe(url, description => {
-                    akasha.cache.set(pluginName+':describe', url, description);
-                    // console.log(`engineDescribe ${url} ${util.inspect(description)}`);
-                    resolve(description);
-                });
-            } catch (e) {
-                // console.error(`engineDescribe FAIL ${url} ${e}`);
-                reject(e);
-            }
-        });
-    }
-}); */
-
-/* var urlEngineGetEmbed = co.wrap(function* (metadata, embedurl) {
-
-    var urlP = url.parse(embedurl);
-    // console.log(`urlEngineGetEmbed urlP ${util.inspect(urlP)}`);
-    if (urlP.hostname.toLowerCase().endsWith('slideshare.net')) {
-        var description = yield engineDescribe(embedurl);
-        description.data = {
-            title: description.title,
-            provider_name: description.site_name,
-            author_url: description.url,
-            author_name: description.url,
-            html: description.embed && description.embed.html ? description.embed.html : description.preview
-        };
-        return Promise.resolve(description);
-    } /* else {
-        console.log(`urlEngineGetEmbed not slideshare.net || facebook.com ${util.inspect(urlP)}`);
-    } * /
-
-    const cacheKey = pluginName+':url-embed-data';
-
-    var description = akasha.cache.get(cacheKey, embedurl);
-    if (description) {
-        return description;
-    }
-
-    let embed = new Embed(embedurl, {});
-    return yield new Promise((resolve, reject) => {
-        try {
-            urlEngine.getEmbed(embed, (embed) => {
-                if (typeof embed === 'undefined' || !embed) {
-                    reject(new Error(`url-embed NO DATA for url ${embedurl} in ${metadata.document.path}`));
-                } else if (embed.error) {
-                    reject(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ embed.error));
-                } else {
-                    akasha.cache.set(cacheKey, embedurl, embed);
-                    resolve(embed);
-                }
-            });
-        } catch (e) { reject(e); }
-    });
-
-}); */
-
-
 module.exports.mahabhuta = new mahabhuta.MahafuncArray(pluginName, {});
 
 class EmbedResourceContent extends mahabhuta.CustomElement {
@@ -492,6 +120,8 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
         var style  = $element.attr('style') ? $element.attr('style') : undefined;
         var align  = $element.attr('align') ? $element.attr('align') : undefined;
         var title  = $element.attr('title') ? $element.attr('title') : undefined;
+
+        // TODO capture the body text, making it available to the template
 
         /* var enableResponsive = $element.attr('enable-responsive') ? $element.attr('enable-responsive') : undefined;
 
@@ -550,46 +180,7 @@ module.exports.mahabhuta.addMahafunc([
 		$('youtube-metadata').each(function(i, elem) { elemsYT[i] = elem; });
         if (elemsYT.length > 0) return done(new Error("DEPRECATED youtube-metadata"));
         else done();
-		/* async.eachSeries(elemsYT, function(elemYT, next) {
-			log(elemYT.name);
-			// util.log($.html());
-			var yturl = ytGetUrl($, elemYT);
-			var id = ytGetId($, yturl);
-			if (!id) {
-				next(new Error("No Youtube ID in youtube-metadata")); // + util.inspect(elemYT)));
-			} else {
-				ytVidInfo(metadata.config, id, function(err, resultData) {
-					if (err) next(err);
-					else {
-						var result = resultData;
-						// log('youtube-metadata for '+ id +' '+ util.inspect(result));
-						var item = result && result.items && result.items.length >= 0 ? result.items[0] : null;
-						var thumbs = item ? item.snippet.thumbnails : undefined;
-						if (!item) {
-							next(new Error("(youtube-metadata) Youtube didn't get anything for id="+ id));
-						} else if ($('head').get(0)) {
-							// Only do this substitution if we are on a completely rendered page
-							// log('youtube-metadata running w/ head element');
-							$('head').append(
-								'<meta property="og:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n' +
-								'<meta name="twitter:image" content="'+ ytBestThumbnail(thumbs) +'"/>\n'
-							);
-							$(elemYT).replaceWith('');
-							next();
-						} else {
-							// log('youtube-metadata running before head element');
-							next();
-						}
-					}
-				});
-			}
-		}, function(err) {
-			if (err) done(err);
-			else done();
-		}); */
 	},
-
-
 
 	function($, metadata, dirty, done) {
 		var elements = [];
@@ -598,120 +189,8 @@ module.exports.mahabhuta.addMahafunc([
 		// console.log(`framed/simple-embed ${elements.length}`);
         if (elements.length > 0) return done(new Error("DEPRECATED framed/simple-embed"));
         else done();
-		/* async.eachSeries(elements, (element, next) => {
-            // TODO  width="WIDTH" class="CLASS" style="STYLE" align="ALIGN"
-			var template = $(element).attr('template');
-			var embedurl = $(element).attr('href');
-			var title    = $(element).attr('title');
-			if (!template) {
-				if (element.name === 'framed-embed') {
-					template = 'framed-embed.html.ejs';
-				} else if (element.name === 'simple-embed') {
-					template = 'simple-embed.html.ejs';
-				} else {
-					return next(new Error("Incorrect element.name "+ element.name +" SHOULD NOT HAPPEN"));
-				}
-			}
-			if (!embedurl) {
-				return next(new Error('No embed url in '+ metadata.document.path));
-			}
-
-            urlEngineGetEmbed(metadata, embedurl)
-            .then(embed => {
-                // console.log(`after urlEngineGetEmbed ${embedurl} ${util.inspect(title)} ${util.inspect(embed)}`);
-
-                if (!title && embed.data && embed.data.title) title = embed.data.title;
-                // else if (!title && embed.title) title = embed.title;
-                else if (!title && embed.author_name) title = embed.author_name;
-                else if (!title) title = "no-title";
-
-                akasha.partial(metadata.config, template, {
-                    embedUrl: embedurl,
-                    embedSource: embed.data.provider_name,
-                    title: title,
-                    authorUrl: embed.data.author_url,
-                    authorName: embed.data.author_name,
-                    // publishedAt: item.snippet.publishedAt,
-                    description: "",
-                    embedCode: embed.data.html,
-                    preview: embed.preview ? embed.preview : embed.data.html,
-                    fullEmbed: embed
-                })
-                .then(html => {
-                    $(element).replaceWith(html);
-                    dirty();
-                    next();
-                })
-                .catch(err => { error(err); next(err); });
-                // Embed markup
-                // console.log(embed.data.html);
-            })
-            .catch(err => {
-                return next(new Error("url-embed failed for url "+ embedurl +" in "+ metadata.document.path +" with error "+ err));
-            });
-
-			// console.log(`${element.name} ${template} ${embedurl} ${title}`);
-            /* engineDescribe(embedurl).then(description => {
-				// console.log(`${embedurl} ${util.inspect(description)}`);
-				if (!description) {
-					return next(new Error("No embed data for url "+ embedurl +" in "+ metadata.document.path));
-				}
-				// console.log(`embedurl = ${embedurl} description = ${util.inspect(description)}`);
-				if (description.embed && description.embed.html) {
-					// console.log(`saw embed html ${description.embed.html}`);
-					akasha.partial(metadata.config, template, {
-						embedUrl: embedurl,
-						embedSource: description.site_name,
-						title: title ? title : description.title,
-						// authorUrl: ,
-						// authorName: item.snippet.channelTitle,
-						// publishedAt: item.snippet.publishedAt,
-						description: description.description,
-						embedCode: description.embed.html,
-                        preview: description.preview,
-                        fullEmbed: description
-					})
-					.then(html => {
-						$(element).replaceWith(html);
-						dirty();
-						next();
-					})
-					.catch(err => { error(err); next(err); });
-				} else if (description.preview) {
-					// console.log(`saw preview ${description.preview}`);
-					akasha.partial(metadata.config, template, {
-						embedUrl: embedurl,
-						embedSource: description.site_name,
-						title: title ? title : description.site_name,
-						// authorUrl: ,
-						// authorName: item.snippet.channelTitle,
-						// publishedAt: item.snippet.publishedAt,
-						description: undefined,
-						embedCode: description.preview,
-                        fullEmbed: description
-					})
-					.then(html => {
-						$(element).replaceWith(html);
-						dirty();
-						next();
-					})
-					.catch(err => { error(err); next(err); });
-				} else {
-					next(new Error("No embeddable content found for url "+ embedurl +" in "+ metadata.document.path))
-				}
-			}).catch(e => {
-				console.error('framed-embed FAILURE on url '
-                    + embedurl +' in '+ metadata.document.path
-                    +' because '+ e);
-				next();
-			}); /* * /
-		}, function(err) {
-			if (err) done(err);
-			else done();
-		}); */
 	},
 
-/* TODO Eliminate these in preference for an embed-metadata */
 	function($, metadata, dirty, done) {
 		// <youtube-title id="" href=".."/>
 		var elemsYT = [];
@@ -722,65 +201,8 @@ module.exports.mahabhuta.addMahafunc([
 		$('framed-youtube-player').each(function(i, elem) { elemsYT.push(elem); });
         if (elemsYT.length > 0) return done(new Error("DEPRECATED youtube-title/etc"));
         else done();
-		/* async.eachSeries(elemsYT, function(elemYT, next) {
-			log(elemYT.name);
-			var yturl = ytGetUrl($, elemYT);
-			var id = ytGetId($, yturl);
-			if (!id) {
-				next(new Error("No Youtube ID for ")); // + util.inspect(elemYT)));
-			} else {
-				ytVidInfo(metadata.config, id, function(err, resultData) {
-					if (err) next(err);
-					else {
-						var result = resultData;
-						var item = result.items[0];
-
-						// log(util.inspect(item));
-                        dirty();
-
-						if (item) {
-							if (elemYT.name === 'youtube-title') {
-								$(elemYT).replaceWith(item.snippet.title);
-								next();
-							} else if (elemYT.name === 'youtube-author') {
-								$(elemYT).replaceWith(item.snippet.channelTitle);
-								next();
-							} else if (elemYT.name  === 'youtube-description') {
-								$(elemYT).replaceWith(item.snippet.description);
-								next();
-							} else if (elemYT.name === 'youtube-publ-date') {
-								// TODO fix this to parse & print nicely
-								$(elemYT).replaceWith(item.snippet.publishedAt);
-								next();
-							}  else if (elemYT.name === 'framed-youtube-player') {
-								akasha.partial(metadata.config, 'framed-youtube-player.html.ejs', {
-									youtubeUrl: yturl,
-									title: item.snippet.title,
-									// authorUrl: ,
-									authorName: item.snippet.channelTitle,
-									publishedAt: item.snippet.publishedAt,
-									description: item.snippet.description,
-									embedCode: item.html ? item.html : ytPlayerCode($, metadata.config, elemYT, id)
-								})
-								.then(html => {
-									$(elemYT).replaceWith(html);
-									dirty();
-									next();
-								})
-								.catch(err => { error(err); next(err); });
-							} else next(new Error("failed to match -title or -author or -description "+ $(elemYT).name));
-						} else next(new Error("nothing found for youtube id="+ id));
-					}
-				});
-			}
-		}, function(err) {
-			if (err) done(err);
-			else done();
-		}); */
 	},
-/* */
 
-/* TODO Eliminate these in preference for an embed-metadata */
 	function($, metadata, dirty, done) {
 		// <vimeo-player url="..." />
 		// <vimeo-thumbnail url="..." />
@@ -797,73 +219,8 @@ module.exports.mahabhuta.addMahafunc([
 		$('vimeo-description').each(function(i, elem) { elements.push(elem); });
         if (elements.length > 0) return done(new Error("DEPRECATED vimeo-title/etc"));
         else done();
-		/* async.eachSeries(elements, function(element, next) {
-			log(element.name);
-			vimeoData($(element).attr('url'), function(err, vdata) {
-				if (err) next(err);
-				else {
-                    dirty();
-					var template = $(element).attr('template');
-					if (element.name === 'vimeo-player') {
-						$(element).replaceWith(vdata.html);
-						next();
-					} else if (element.name === 'framed-vimeo-player') {
-						akasha.partial(metadata.config, 'framed-vimeo-player.html.ejs', {
-							vimeoUrl: $(element).attr('url'),
-							title: vdata.title,
-							// authorUrl: ,
-							authorName: vdata.author_name,
-							description: vdata.description,
-							embedCode: vdata.html
-						})
-						.then(html => {
-							$(element).replaceWith(html);
-							next();
-						})
-						.catch(err => { error(err); next(err); });
-					} else if (element.name === 'vimeo-thumbnail') {
-
-						var width = $(element).attr('width') ? $(element).attr('width') : undefined;
-						// var height = $(element).attr('height') ? $(element).attr('height') : undefined;
-						var _class = $(element).attr('class') ? $(element).attr('class') : undefined;
-						var style = $(element).attr('style') ? $(element).attr('style') : undefined;
-						var align = $(element).attr('align') ? $(element).attr('align') : undefined;
-
-						akasha.partial(metadata.config, template ? template : "youtube-thumb.html.ejs", {
-							imgwidth: width,
-							imgalign: align,
-							imgclass: _class,
-							style: style,
-							imgurl: vdata.thumbnail_url
-						})
-						.then(thumb => {
-							// log('vimeo-thumbnail '+ thumb);
-							$(element).replaceWith(thumb);
-							next();
-						})
-						.catch(err => { error(err); next(err); });
-					} else if (element.name === 'vimeo-title') {
-						$(element).replaceWith(vdata.title);
-						next();
-					} else if (element.name === 'vimeo-author') {
-						$(element).replaceWith(vdata.author_name);
-						next();
-					} else if (element.name === 'vimeo-description') {
-						$(element).replaceWith(vdata.description);
-						next();
-					} else {
-						next();
-					}
-				}
-			});
-		},
-		function(err) {
-			if (err) done(err); else done();
-		}); */
 	},
-/* */
 
-/* TODO Eliminate these in preference for an embed-metadata */
 	function($, metadata, dirty, done) {
 		// <slideshare-embed href=".."
 		var elements = [];
@@ -871,69 +228,14 @@ module.exports.mahabhuta.addMahafunc([
 		$('slideshare-metadata').each(function(i, elem) { elements.push(elem); });
         if (elements.length > 0) return done(new Error("DEPRECATED slideshare-embed/etc"));
         else done();
-		/* async.eachSeries(elements, function(element, next) {
-			var href = $(element).attr('href');
-			slideshareData(href, function(err, result) {
-				if (err) next(err);
-				else {
-					if (element.name === 'slideshare-embed') {
-                        // console.log(`slideshare-embed ${href} ${util.inspect(result)}`);
-						akasha.partial(metadata.config, 'slideshare-embed.html.ejs', {
-							title: result.title,
-							author_url: result.author_url,
-							author: result.author_name,
-							htmlEmbed: result.html,
-							slideshare_url: href
-						})
-						.then(slideshow => {
-							$(element).replaceWith(slideshow);
-							next();
-						})
-						.catch(err => { error(err); next(err); });
-					} else if (element.name === 'slideshare-metadata') {
-						if ($('head').get(0)) {
-							// Only do this substitution if we are on a completely rendered page
-							$('head').append(
-								'<meta property="og:image" content="'+ result.thumbnail +'"/>\n' +
-								'<meta name="twitter:image" content="'+ result.thumbnail +'"/>\n'
-							);
-							$(element).replaceWith('');
-							next();
-						} else next();
-					} else {
-						next(new Error('unknown element '+ element.name));
-					}
-				}
-			});
-		},
-		function(err) {
-			if (err) done(err); else done();
-		}); */
 	},
 
-/* TODO Eliminate these in preference for an embed-metadata */
 	function($, metadata, dirty, done) {
 		// <twitter-embed href=".."
 		var elements = [];
 		$('twitter-embed').each(function(i, elem) { elements.push(elem); });
         if (elements.length > 0) return done(new Error("DEPRECATED twitter-embed/etc"));
         else done();
-		/* async.eachSeries(elements, function(element, next) {
-			var href = $(element).attr('href');
-			akasha.oEmbedData(href)
-			.then(results => {
-				akasha.partial(metadata.config, "twitter-embed.html.ejs", results)
-				.then(html => {
-					$(element).replaceWith(html);
-					next();
-				})
-				.catch(err => { next(err); });
-			})
-			.catch(err => { next(err); });
-		},
-		function(err) {
-			if (err) done(err); else done();
-		}); */
 	},
 
 	function($, metadata, dirty, done) {
@@ -942,22 +244,6 @@ module.exports.mahabhuta.addMahafunc([
 		$('oembed').each(function(i, elem) { elemsOE[i] = elem; });
         if (elemsOE.length > 0) return done(new Error("DEPRECATED oembed/etc"));
         else done();
-		// util.log(util.inspect(elemsOE));
-		/* async.eachSeries(elemsOE, function(elemOE, next) {
-			// log(util.inspect(elemOE));
-			var url = $(elemOE).attr("href");
-			var template = $(elemOE).attr('template');
-			akasha.oEmbedData(url)
-			.then(results => { return akasha.partial(metadata.config, template, results); })
-			.then(html => {
-				$(elemOE).replaceWith(html);
-				next();
-			})
-			.catch(err => { next(err); });
-		}, function(err) {
-			if (err) done(err);
-			else done();
-		}); */
 	},
 
 ]);
