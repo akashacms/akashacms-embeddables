@@ -1,4 +1,8 @@
 <%
   if (typeof videoUrls !== "undefined" && videoUrls && videoUrls[0] && videoUrls[0].url) {
-    %><embed-thumbnail width="200" align="right" href="<%= videoUrls[0].url %>"/><%
+    %><embed-resource
+            template="embed-thumbnail.html.ejs"
+            width="200"
+            align="right"
+            href="<%= videoUrls[0].url %>"/><%
   } %>

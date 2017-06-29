@@ -1,19 +1,13 @@
 
 <%
-  if (typeof videoUrls !== "undefined" && videoUrls) {
-    videoUrls.forEach(function(videoData) {
-    	if (videoData.url.match(/vimeo.com/)) { %>
-			<embed-resource template="framed-embed.html.ejs" <%
-				if (videoData.hideDescription) { %>data-hide-description='<%= videoData.hideDescription %>' <% }
-			%> href='<%= videoData.url %>'></embed-resource><%
-		} if (videoData.url.match(/youtube.com/)) { %>
-			<embed-resource template="framed-embed.html.ejs" autohide="1" modestbranding="0" rel="0" showinfo="1" iv_load_policy="3" <%
-				if (videoData.hideDescription) { %>data-hide-description='<%= videoData.hideDescription %>' <% }
-			%> href='<%= videoData.url %>'></embed-resource><%
-		} else { %>
-            <embed-resource template="framed-embed.html.ejs" <%
-				if (videoData.hideDescription) { %>data-hide-description='<%= videoData.hideDescription %>' <% }
-			%> href='<%= videoData.url %>'></embed-resource><%
-        }
+if (typeof videoUrls !== "undefined" && videoUrls) {
+    videoUrls.forEach(function(videoData) { %>
+        <embed-resource
+        template="embed-resource-framed.html.ejs" <%
+            if (videoData.hideDescription) { %>data-hide-description='<%= videoData.hideDescription %>' <% }
+        %>
+        enable-responsive="yes"
+        href='<%= videoData.url %>'></embed-resource><%
     })
-  } %>
+}
+%>
