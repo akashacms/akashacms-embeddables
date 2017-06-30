@@ -145,6 +145,11 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
                 mdata.imageUrl = data.metadata.twitterImage;
             } else if (data.thumbnail_url) {
                 mdata.imageUrl = data.thumbnail_url;
+            } else {
+                mdata.imageUrl = "/no-image.gif";
+            }
+            if (!mdata.embedCode) {
+                throw new Error(`EmbedResourceContent FAIL to retrieve data for ${href} in ${metadata.document.path}`);
             }
             return akasha.partial(metadata.config, template, mdata);
         });
