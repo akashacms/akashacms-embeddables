@@ -28,11 +28,6 @@ const request  = require('request');
 const akasha   = require('akasharender');
 const mahabhuta = require('mahabhuta');
 
-/* const CachemanFile = require('cacheman-file');
-const cache = new CachemanFile({
-    tmpDir: "embeddables-cache"
-}); */
-
 const extract = require('meta-extractor');
 const oembetter = require('oembetter')();
 
@@ -81,58 +76,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 		config.addMahabhuta(module.exports.mahabhuta);
 	}
 
-	set youtubeKey(key) {
-        throw new Error('DEPRECATED');
-		if (!this._config.embeddables) this._config.embeddables = {};
-		this._config.embeddables.youtubeKey = key;
-		youtube.setKey(key);
-	}
-
-	get youtubeKey() {
-        throw new Error('DEPRECATED');
-		if (!this._config.embeddables) this._config.embeddables = {};
-		return this._config.embeddables.youtubeKey;
-	}
-
     fetchEmbedData(embedurl) {
-        /* return co(function* () {
-            var data = yield new Promise((resolve, reject) => {
-                cache.get(embedurl, (err, data) => {
-                    if (err) return reject(err);
-                    if (data) return resolve(data);
-                });
-            });
-            if (data) return data;
-            data = yield new Promise((resolve, reject) => {
-                oembetter.fetch(embedurl, (err, result) => {
-                    if (err) reject(err);
-                    else resolve(result);
-                });
-            });
-            return yield new Promise((resolve, reject) => {
-                cache.set(embedurl, 10*24*60*60, data, (err, value) => {
-                    if (err) reject(err);
-                    else resolve(data);
-                });
-            });
-        }); */
-        /* * /
-        return new Promise((resolve, reject) => {
-            cache.get(embedurl, (err, data) => {
-                if (err) return reject(err);
-                if (data) return resolve(data);
-
-                oembetter.fetch(embedurl, (err, result) => {
-                    if (err) return reject(err);
-                    cache.set(embedurl, 10*24*60*60, result, (err, value) => {
-                        if (err) reject(err);
-                        else resolve(result);
-                    });
-                });
-            });
-        });/ * */
-
-        /* */
         var data = akasha.cache.get(pluginName+':fetchEmbedData', embedurl);
         if (data) {
             return Promise.resolve(data);
@@ -145,7 +89,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                     resolve(result);
                 }
             });
-        }); /* */
+        });
     }
 };
 
