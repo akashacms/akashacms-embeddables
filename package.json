@@ -16,14 +16,11 @@
     "node": ">=6.1"
   },
   "dependencies": {
-    "async": "*",
     "co": "*",
     "debug": "^2.2.0",
-    "metaphor": ">=3.4.1",
     "oembetter": "^0.1.15",
     "meta-extractor": "*",
     "request": "*",
-    "url-embed": "*",
-    "youtube-node": "*"
+    "cacheman-file": "*"
   }
 }
