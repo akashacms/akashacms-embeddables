@@ -1,0 +1,23 @@
+
+<%
+    if (typeof embedData !== 'undefined' && embedData.thumbnail_url) {
+        %><meta-og-image src="<%= embedData.thumbnail_url %>"/><%
+    }
+    if (typeof embedData !== 'undefined'
+     && typeof embedData.metadata !== 'undefined'
+     && embedData.metadata.ogImage) {
+        %><meta-og-image src="<%= embedData.metadata.ogImage %>"/><%
+    }
+    if (typeof embedData !== 'undefined'
+     && typeof embedData.metadata !== 'undefined'
+     && typeof embedData.metadata.twitterImage !== 'undefined') {
+        %><meta-og-image src="<%= embedData.metadata.twitterImage %>"/><%
+    }
+    if (typeof embedData !== 'undefined'
+     && typeof embedData.metadata !== 'undefined'
+     && embedData.metadata.images) {
+        for (let img of embedData.metadata.images) {
+            %><meta-og-image src="<%= img %>"/><%
+        }
+    }
+%>
