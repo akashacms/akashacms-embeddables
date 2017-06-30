@@ -28,10 +28,10 @@ const request  = require('request');
 const akasha   = require('akasharender');
 const mahabhuta = require('mahabhuta');
 
-const CachemanFile = require('cacheman-file');
+/* const CachemanFile = require('cacheman-file');
 const cache = new CachemanFile({
     tmpDir: "embeddables-cache"
-});
+}); */
 
 const extract = require('meta-extractor');
 const oembetter = require('oembetter')();
