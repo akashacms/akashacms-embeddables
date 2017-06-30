@@ -116,7 +116,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                 });
             });
         }); */
-        /* */
+        /* * /
         return new Promise((resolve, reject) => {
             cache.get(embedurl, (err, data) => {
                 if (err) return reject(err);
@@ -130,9 +130,9 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                     });
                 });
             });
-        });/* */
+        });/ * */
 
-        /*
+        /* */
         var data = akasha.cache.get(pluginName+':fetchEmbedData', embedurl);
         if (data) {
             return Promise.resolve(data);
@@ -145,7 +145,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                     resolve(result);
                 }
             });
-        }); */
+        }); /* */
     }
 };
 
