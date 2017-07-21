@@ -160,6 +160,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
                 embedUrl: data.author_url ? data.author_url : href,
                 embedSource: data.author_name ? data.author_name : data.author_url,
                 embedClass: _class,
+                embedHref: href,
                 width, style, align
                 // , enableResponsive
             };

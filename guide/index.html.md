@@ -51,6 +51,7 @@ The data provided is:
 * `embedData` -- The full data retrieved using oEmbed, OpenGraph and Twitter Card (more on this below)
 * `embedCode` -- The HTML snippet supplied
 * `title` -- The _title_ supplied either in the attributes or from queries
+* `embedHref` -- The _href_ supplied in the attributes
 * `embedUrl` -- The URL for the author of the embedded resource
 * `embedSource` -- The author name for the embedded resource
 * `embedClass` -- The `class` name to use on the outermost element of emitted HTML
