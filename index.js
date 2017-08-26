@@ -23,7 +23,6 @@ const path     = require('path');
 const util     = require('util');
 const url      = require('url');
 const co       = require('co');
-const async    = require('async');
 const request  = require('request');
 const levelup  = require('levelup')
 const akasha   = require('akasharender');
