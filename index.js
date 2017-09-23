@@ -24,7 +24,7 @@ const util     = require('util');
 const url      = require('url');
 const co       = require('co');
 const request  = require('request');
-const levelup  = require('levelup')
+// const levelup  = require('levelup')
 const akasha   = require('akasharender');
 const mahabhuta = require('mahabhuta');
 
@@ -76,23 +76,23 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addAssetsDir(path.join(__dirname, 'assets'));
         config.addMahabhuta(module.exports.mahabhuta);
-        leveldb = levelup(`${pluginName}.db`, {
+        /* leveldb = levelup(`${pluginName}.db`, {
             createIfMissing: true,
             keyEncoding: 'json',
             valueEncoding: 'json'
-        });
+        }); */
     }
 
     fetchEmbedData(embedurl) {
 
-        return co(function* () {
-            var data = yield new Promise((resolve, reject) => {
+        /* return co(function* () {
+            var data = undefined; /* yield new Promise((resolve, reject) => {
                 leveldb.get(embedurl, (err, data) => {
                     if (err && err.notFound) resolve();
                     else if (err) reject(err);
                     else resolve(data);
                 });
-            });
+            }); * /
             if (data) return data;
             data = yield new Promise((resolve, reject) => {
                 oembetter.fetch(embedurl, (err, result) => {
@@ -100,16 +100,16 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                     else resolve(result);
                 });
             });
-            yield new Promise((resolve, reject) => {
+            /* yield new Promise((resolve, reject) => {
                 leveldb.put(embedurl, data, err => {
                     if (err) reject(err);
                     else resolve();
                 });
-            });
+            }); * /
             return data;
-        });
+        }); */
 
-        /* var data = akasha.cache.get(pluginName+':fetchEmbedData', embedurl);
+        var data = akasha.cache.get(pluginName+':fetchEmbedData', embedurl);
         if (data) {
             return Promise.resolve(data);
         }
@@ -121,7 +121,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                     resolve(result);
                 }
             });
-        }); */
+        });
     }
 };
 
