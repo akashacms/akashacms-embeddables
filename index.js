@@ -26,7 +26,7 @@ const co       = require('co');
 const request  = require('request');
 // const levelup  = require('levelup')
 const akasha   = require('akasharender');
-const mahabhuta = require('mahabhuta');
+const mahabhuta = akasha.mahabhuta;
 
 const extract = require('meta-extractor');
 const oembetter = require('oembetter')();
