@@ -23,7 +23,6 @@ const path     = require('path');
 const util     = require('util');
 const url      = require('url');
 const request  = require('request');
-// const levelup  = require('levelup')
 const akasha   = require('akasharender');
 const mahabhuta = akasha.mahabhuta;
 
@@ -41,16 +40,16 @@ const doExtract = (url) => {
 
 oembetter.addAfter(async (url, options, response, callback) => {
     try {
-        result = await doExtract(url);
+        let result = await doExtract(url);
         response.metadata = result;
     } finally {
         callback();
     }
 });
 
-oembetter.addFallback(function(url, options, callback) {
+oembetter.addFallback(async function(url, options, callback) {
     try {
-        result = await doExtract(url);
+        let result = await doExtract(url);
         callback(undefined, {
             metadata: result
         });
@@ -76,38 +75,9 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addAssetsDir(path.join(__dirname, 'assets'));
         config.addMahabhuta(module.exports.mahabhuta);
-        /* leveldb = levelup(`${pluginName}.db`, {
-            createIfMissing: true,
-            keyEncoding: 'json',
-            valueEncoding: 'json'
-        }); */
     }
 
     fetchEmbedData(embedurl) {
-
-        /* return co(function* () {
-            var data = undefined; /* yield new Promise((resolve, reject) => {
-                leveldb.get(embedurl, (err, data) => {
-                    if (err && err.notFound) resolve();
-                    else if (err) reject(err);
-                    else resolve(data);
-                });
-            }); * /
-            if (data) return data;
-            data = yield new Promise((resolve, reject) => {
-                oembetter.fetch(embedurl, (err, result) => {
-                    if (err) reject(err);
-                    else resolve(result);
-                });
-            });
-            /* yield new Promise((resolve, reject) => {
-                leveldb.put(embedurl, data, err => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            }); * /
-            return data;
-        }); */
 
         var data = akasha.cache.retrieve(pluginName+':fetchEmbedData', embedurl);
         if (data) {
@@ -115,9 +85,15 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         }
         return new Promise((resolve, reject) => {
             oembetter.fetch(embedurl, (err, result) => {
-                if (err) reject(err);
-                else {
-                    akasha.cache.persist(pluginName+':fetchEmbedData', embedurl, result);
+                if (err) {
+                    console.error(`${pluginName} fetchEmbedData FAIL on ${embedurl} because ${err}`);
+                    reject(err);
+                } else {
+                    try {
+                        akasha.cache.persist(pluginName+':fetchEmbedData', embedurl, result);
+                    } catch (err2) {
+                        console.error(`${pluginName} fetchEmbedData akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
+                    }
                     resolve(result);
                 }
             });
@@ -150,7 +126,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
             enableResponsive = "embed-responsive embed-responsive-16by9";
         } */
 
-        let data = metadata.config.plugin(pluginName).fetchEmbedData(href);
+        let data = await metadata.config.plugin(pluginName).fetchEmbedData(href);
         var mdata = {
             embedData: data,
             embedCode: data.html,
@@ -181,12 +157,14 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
             mdata.imageUrl = "/no-image.gif";
         }
         if (!mdata.embedCode) {
-            throw new Error(`EmbedResourceContent FAIL to retrieve data for ${href} in ${metadata.document.path}`);
+            throw new Error(`EmbedResourceContent FAIL to retrieve data for ${href} in ${metadata.document.path} data ${data} mdata ${mdata}`);
         }
         return akasha.partial(metadata.config, template, mdata);
     }
 }
 module.exports.mahabhuta.addMahafunc(new EmbedResourceContent());
+
+// These are here to throw errors in case old tags are used.
 
 class EmbedThumbnailContent extends mahabhuta.CustomElement {
     get elementName() { return "embed-thumbnail"; }
