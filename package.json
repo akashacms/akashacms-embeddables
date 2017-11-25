@@ -13,10 +13,9 @@
   },
   "version": "0.6.7",
   "engines": {
-    "node": ">=6.1"
+    "node": ">=8.4"
   },
   "dependencies": {
-    "co": "*",
     "debug": "^2.2.0",
     "oembetter": "^0.1.15",
     "meta-extractor": "*",

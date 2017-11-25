@@ -22,7 +22,6 @@
 const path     = require('path');
 const util     = require('util');
 const url      = require('url');
-const co       = require('co');
 const request  = require('request');
 // const levelup  = require('levelup')
 const akasha   = require('akasharender');
@@ -40,23 +39,24 @@ const doExtract = (url) => {
     })
 };
 
-oembetter.addAfter((url, options, response, callback) => {
-    doExtract(url)
-    .then(result => {
+oembetter.addAfter(async (url, options, response, callback) => {
+    try {
+        result = await doExtract(url);
         response.metadata = result;
+    } finally {
         callback();
-    })
-    .catch(err => { callback(); });
+    }
 });
 
 oembetter.addFallback(function(url, options, callback) {
-    doExtract(url)
-    .then(result => {
+    try {
+        result = await doExtract(url);
         callback(undefined, {
             metadata: result
         });
-    })
-    .catch(err => { callback(err); });
+    } catch(err) {
+        callback(err);
+    }
 });
 
 const log     = require('debug')('akasha:embeddables-plugin');
@@ -109,7 +109,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
             return data;
         }); */
 
-        var data = akasha.cache.get(pluginName+':fetchEmbedData', embedurl);
+        var data = akasha.cache.retrieve(pluginName+':fetchEmbedData', embedurl);
         if (data) {
             return Promise.resolve(data);
         }
@@ -117,7 +117,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
             oembetter.fetch(embedurl, (err, result) => {
                 if (err) reject(err);
                 else {
-                    akasha.cache.set(pluginName+':fetchEmbedData', embedurl, result);
+                    akasha.cache.persist(pluginName+':fetchEmbedData', embedurl, result);
                     resolve(result);
                 }
             });
@@ -129,7 +129,7 @@ module.exports.mahabhuta = new mahabhuta.MahafuncArray(pluginName, {});
 
 class EmbedResourceContent extends mahabhuta.CustomElement {
     get elementName() { return "embed-resource"; }
-    process($element, metadata, dirty) {
+    async process($element, metadata, dirty) {
         dirty();
         var href = $element.attr("href");
         if (!href) throw new Error("URL required for embed-resource");
@@ -150,42 +150,40 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
             enableResponsive = "embed-responsive embed-responsive-16by9";
         } */
 
-        return metadata.config.plugin(pluginName).fetchEmbedData(href)
-        .then(data => {
-            var mdata = {
-                embedData: data,
-                embedCode: data.html,
-                title: data.metadata && data.metadata.title ? data.metadata.title : "",
-                embedUrl: data.author_url ? data.author_url : href,
-                embedSource: data.author_name ? data.author_name : data.author_url,
-                embedClass: _class,
-                embedHref: href,
-                width, style, align
-                // , enableResponsive
-            };
-            if (data.metadata && data.metadata.ogDescription) {
-                mdata.description = data.metadata.ogDescription;
-            } else if (data.metadata && data.metadata.description) {
-                mdata.description = data.metadata.description;
-            } else if (data.metadata && data.metadata.twitterDescription) {
-                mdata.description = data.metadata.twitterDescription;
-            } else {
-                mdata.description = "";
-            }
-            if (data.metadata && data.metadata.ogImage) {
-                mdata.imageUrl = data.metadata.ogImage;
-            } else if (data.metadata && data.metadata.twitterImage) {
-                mdata.imageUrl = data.metadata.twitterImage;
-            } else if (data.thumbnail_url) {
-                mdata.imageUrl = data.thumbnail_url;
-            } else {
-                mdata.imageUrl = "/no-image.gif";
-            }
-            if (!mdata.embedCode) {
-                throw new Error(`EmbedResourceContent FAIL to retrieve data for ${href} in ${metadata.document.path}`);
-            }
-            return akasha.partial(metadata.config, template, mdata);
-        });
+        let data = metadata.config.plugin(pluginName).fetchEmbedData(href);
+        var mdata = {
+            embedData: data,
+            embedCode: data.html,
+            title: data.metadata && data.metadata.title ? data.metadata.title : "",
+            embedUrl: data.author_url ? data.author_url : href,
+            embedSource: data.author_name ? data.author_name : data.author_url,
+            embedClass: _class,
+            embedHref: href,
+            width, style, align
+            // , enableResponsive
+        };
+        if (data.metadata && data.metadata.ogDescription) {
+            mdata.description = data.metadata.ogDescription;
+        } else if (data.metadata && data.metadata.description) {
+            mdata.description = data.metadata.description;
+        } else if (data.metadata && data.metadata.twitterDescription) {
+            mdata.description = data.metadata.twitterDescription;
+        } else {
+            mdata.description = "";
+        }
+        if (data.metadata && data.metadata.ogImage) {
+            mdata.imageUrl = data.metadata.ogImage;
+        } else if (data.metadata && data.metadata.twitterImage) {
+            mdata.imageUrl = data.metadata.twitterImage;
+        } else if (data.thumbnail_url) {
+            mdata.imageUrl = data.thumbnail_url;
+        } else {
+            mdata.imageUrl = "/no-image.gif";
+        }
+        if (!mdata.embedCode) {
+            throw new Error(`EmbedResourceContent FAIL to retrieve data for ${href} in ${metadata.document.path}`);
+        }
+        return akasha.partial(metadata.config, template, mdata);
     }
 }
 module.exports.mahabhuta.addMahafunc(new EmbedResourceContent());
