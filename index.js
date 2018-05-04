@@ -157,7 +157,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
             mdata.imageUrl = "/no-image.gif";
         }
         if (!mdata.embedCode) {
-            throw new Error(`EmbedResourceContent FAIL to retrieve data for ${href} in ${metadata.document.path} data ${data} mdata ${mdata}`);
+            throw new Error(`EmbedResourceContent FAIL to retrieve data for ${href} in ${metadata.document.path} data ${data} mdata ${util.inspect(mdata)}`);
         }
         return akasha.partial(metadata.config, template, mdata);
     }
