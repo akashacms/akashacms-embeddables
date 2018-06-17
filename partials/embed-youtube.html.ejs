@@ -2,7 +2,7 @@
 <div 
     <% 
     if (typeof embedClass !== 'undefined' && embedClass) {
-        %> class="<%= embedClass %> framed-video-player embed-responsive embed-responsive-16by9" <%
+        %> class="<%= embedClass %> framed-video-player" <%
     }
     if (typeof style !== 'undefined' && style) {
         %> style="<%= style %>" <%
@@ -12,10 +12,12 @@
     } 
     %> >
     <% if (typeof title !== 'undefined' && title) { %>
-        <h3><%= title %></h3>
+        <div style="clear: both;"><h3><%= title %></h3></div>
     <% } %>
 
-    <div style="clear: both;"><iframe src="<%= embedURL %>" type="text/html"></iframe></div>
+    <div style="clear: both;" class="embed-responsive embed-responsive-16by9">
+        <iframe src="<%= embedURL %>" type="text/html"></iframe>
+    </div>
 
     <% if (typeof partialBody !== 'undefined') { %>
         <div>
