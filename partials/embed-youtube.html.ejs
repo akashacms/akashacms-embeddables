@@ -2,13 +2,13 @@
 <div 
     <% 
     if (typeof embedClass !== 'undefined' && embedClass) {
-        class="<%= embedClass %> framed-video-player embed-responsive embed-responsive-16by9"
+        %> class="<%= embedClass %> framed-video-player embed-responsive embed-responsive-16by9" <%
     }
     if (typeof style !== 'undefined' && style) {
-        style="<%= style %>"
+        %> style="<%= style %>" <%
     }
     if (typeof id !== 'undefined' && id) {
-        id="<%= id %>"
+        %> id="<%= id %>" <%
     } 
     %> >
     <% if (typeof title !== 'undefined' && title) { %>
