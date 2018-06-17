@@ -1,0 +1,24 @@
+<div 
+    <% if (typef embedClass !== 'undefined' && embedClass) { %>
+        class="<%= embedClass %> framed-video-player"
+    <% } %>
+    <% if (typef style !== 'undefined' && style) { %>
+        style="<%= style %>"
+    <% } %>
+    <% if (typef id !== 'undefined' && id) { %>
+        id="<%= id %>"
+    <% } %>
+>
+    <% if (typeof title !== 'undefined' && title) { %>
+    <h3><%= title %></h3>
+    <% } %>
+
+    <iframe src="<%= embedURL %>" type="text/html">
+    </iframe>
+
+    <% if (typeof partialBody !== 'undefined') { %>
+    <span>
+    <%- partialBody %>
+    </span>
+    <% } %>
+</div>

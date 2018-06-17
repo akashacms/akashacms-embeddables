@@ -107,16 +107,16 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
     get elementName() { return "embed-resource"; }
     async process($element, metadata, dirty) {
         dirty();
-        var href = $element.attr("href");
+        const href = $element.attr("href");
         if (!href) throw new Error("URL required for embed-resource");
-        var template = $element.attr('template');
+        const template = $element.attr('template');
         if (!template) template = "embed-resource.html.ejs";
-        var width  = $element.attr('width') ? $element.attr('width') : undefined;
+        const width  = $element.attr('width') ? $element.attr('width') : undefined;
         // var height = $element.attr('height') ? $element.attr('height') : undefined;
-        var _class = $element.attr('class') ? $element.attr('class') : undefined;
-        var style  = $element.attr('style') ? $element.attr('style') : undefined;
-        var align  = $element.attr('align') ? $element.attr('align') : undefined;
-        var title  = $element.attr('title') ? $element.attr('title') : undefined;
+        const _class = $element.attr('class') ? $element.attr('class') : undefined;
+        const style  = $element.attr('style') ? $element.attr('style') : undefined;
+        const align  = $element.attr('align') ? $element.attr('align') : undefined;
+        const title  = $element.attr('title') ? $element.attr('title') : undefined;
 
         // TODO capture the body text, making it available to the template
 
@@ -126,8 +126,8 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
             enableResponsive = "embed-responsive embed-responsive-16by9";
         } */
 
-        let data = await metadata.config.plugin(pluginName).fetchEmbedData(href);
-        var mdata = {
+        const data = await metadata.config.plugin(pluginName).fetchEmbedData(href);
+        const mdata = {
             embedData: data,
             embedCode: data.html,
             title: data.metadata && data.metadata.title ? data.metadata.title : "",
@@ -163,6 +163,39 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
     }
 }
 module.exports.mahabhuta.addMahafunc(new EmbedResourceContent());
+
+class EmbedYouTube extends mahabhuta.CustomElement {
+    get elementName() { return "embed-youtube"; }
+    async process($element, metadata, dirty) {
+
+        // API documentation - https://developers.google.com/youtube/player_parameters
+
+        const code = $element.attr("code");
+        if (!code) throw new Error("code required for embed-youtube");
+        const template = $element.attr('template');
+        if (!template) template = "embed-youtube.html.ejs";
+        // var height = $element.attr('height') ? $element.attr('height') : undefined;
+        const _class = $element.attr('class') ? $element.attr('class') : "embed-youtube";
+        const style  = $element.attr('style') ? $element.attr('style') : undefined;
+        const title  = $element.attr('title') ? $element.attr('title') : undefined;
+        const id     = $element.attr('id')    ? $element.attr('id')    : undefined;
+        const autoplay = $element.attr('autoplay') ? $element.attr('autoplay')    : undefined;
+        dirty();
+        const embedURL = new URL("https://www.youtube.com/embed/");
+        embedURL.pathname = "/embed/" + code;
+        if (autoplay) embedURL.searchParams.set("autoplay", autoplay);
+        const mdata = {
+            youtubeCode: code,
+            embedURL: embedURL.href,
+            embedClass: _class, id,
+            title,
+            width, style, align
+            // , enableResponsive
+        };
+        return akasha.partial(metadata.config, template, mdata);
+    }
+}
+module.exports.mahabhuta.addMahafunc(new EmbedYouTube());
 
 // These are here to throw errors in case old tags are used.
 

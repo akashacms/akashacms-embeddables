@@ -6,12 +6,12 @@
   },
   "name": "akashacms-embeddables",
   "description": "A plugin for AkashaCMS supporting embedding thingymajigs in pages",
-  "homepage": "http://akashacms.com/plugins/embeddables.html",
+  "homepage": "https://akashacms.com/plugins/embeddables/index.html",
   "repository": {
     "type": "git",
     "url": "git://github.com/akashacms/akashacms-embeddables.git"
   },
-  "version": "0.6.8",
+  "version": "0.6.9",
   "engines": {
     "node": ">=8.4"
   },
