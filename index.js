@@ -182,13 +182,14 @@ class EmbedYouTube extends mahabhuta.CustomElement {
         const embedURL = new URL("https://www.youtube.com/embed/");
         embedURL.pathname = "/embed/" + code;
         if (autoplay) embedURL.searchParams.set("autoplay", autoplay);
+        const description = $element.html() ? $element.html() : (
+            $element.attr('description') ? $element.attr('description') : undefined
+        );
         const mdata = {
             youtubeCode: code,
             embedURL: embedURL.href,
             embedClass: _class, id,
-            title,
-            /* width,*/ style /* , align */
-            // , enableResponsive
+            title, style, description
         };
         return akasha.partial(metadata.config, template, mdata);
     }
