@@ -11,7 +11,7 @@ if (typeof videoUrls !== "undefined" && videoUrls) {
     });
 }
 if (typeof youtubeUrls !== "undefined" && youtubeUrls) {
-    youtubeUrls.foreach(function(youtubeData) { %>
+    youtubeUrls.forEach(function(youtubeData) { %>
         <embed-youtube code="<%= youtubeData.code %>"
             <% if (typeof youtubeData.title !== "undefined") { %>
                 title="<%= youtubeData.title %>"
