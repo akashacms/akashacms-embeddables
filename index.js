@@ -187,7 +187,7 @@ class EmbedYouTube extends mahabhuta.CustomElement {
             embedURL: embedURL.href,
             embedClass: _class, id,
             title,
-            width, style, align
+            /* width,*/ style, align
             // , enableResponsive
         };
         return akasha.partial(metadata.config, template, mdata);
