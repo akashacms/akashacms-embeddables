@@ -109,8 +109,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
         dirty();
         const href = $element.attr("href");
         if (!href) throw new Error("URL required for embed-resource");
-        const template = $element.attr('template');
-        if (!template) template = "embed-resource.html.ejs";
+        const template = $element.attr('template') ? $element.attr('template') :  "embed-resource.html.ejs";
         const width  = $element.attr('width') ? $element.attr('width') : undefined;
         // var height = $element.attr('height') ? $element.attr('height') : undefined;
         const _class = $element.attr('class') ? $element.attr('class') : undefined;
