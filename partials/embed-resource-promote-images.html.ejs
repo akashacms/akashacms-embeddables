@@ -1,23 +1,23 @@
 
 <%
     if (typeof embedData !== 'undefined' && embedData.thumbnail_url) {
-        %><opengraph-image src="<%= embedData.thumbnail_url %>"/><%
+        %><opengraph-image href="<%= embedData.thumbnail_url %>"/><%
     }
     if (typeof embedData !== 'undefined'
      && typeof embedData.metadata !== 'undefined'
      && embedData.metadata.ogImage) {
-        %><opengraph-image src="<%= embedData.metadata.ogImage %>"/><%
+        %><opengraph-image href="<%= embedData.metadata.ogImage %>"/><%
     }
     if (typeof embedData !== 'undefined'
      && typeof embedData.metadata !== 'undefined'
      && typeof embedData.metadata.twitterImage !== 'undefined') {
-        %><opengraph-image src="<%= embedData.metadata.twitterImage %>"/><%
+        %><opengraph-image href="<%= embedData.metadata.twitterImage %>"/><%
     }
     if (typeof embedData !== 'undefined'
      && typeof embedData.metadata !== 'undefined'
      && embedData.metadata.images) {
         for (let img of embedData.metadata.images) {
-            %><opengraph-image src="<%= img %>"/><%
+            %><opengraph-image href="<%= img %>"/><%
         }
     }
 %>
