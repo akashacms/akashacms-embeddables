@@ -31,7 +31,7 @@ if (typeof youtubeUrls !== "undefined" && youtubeUrls) {
             }
             %> >
             <% if (typeof youtubeData.description !== "undefined") { %>
-                <%= youtubeData.description %>
+                <div style="clear: both;"><%- youtubeData.description %></div>
             <% } %>
         </embed-youtube> <%
     });

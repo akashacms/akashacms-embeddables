@@ -15,12 +15,11 @@
         <h3><%= title %></h3>
     <% } %>
 
-    <iframe src="<%= embedURL %>" type="text/html">
-    </iframe>
+    <div style="clear: both;"><iframe src="<%= embedURL %>" type="text/html"></iframe></div>
 
     <% if (typeof partialBody !== 'undefined') { %>
-        <span>
+        <div>
         <%- partialBody %>
-        </span>
+        </div>
     <% } %>
 </div>
