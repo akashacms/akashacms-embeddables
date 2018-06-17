@@ -1,25 +1,26 @@
 <!-- embed-youtube.html.ejs -->
 <div 
-    <% if (typef embedClass !== 'undefined' && embedClass) { %>
+    <% 
+    if (typeof embedClass !== 'undefined' && embedClass) {
         class="<%= embedClass %> framed-video-player embed-responsive embed-responsive-16by9"
-    <% } %>
-    <% if (typef style !== 'undefined' && style) { %>
+    }
+    if (typeof style !== 'undefined' && style) {
         style="<%= style %>"
-    <% } %>
-    <% if (typef id !== 'undefined' && id) { %>
+    }
+    if (typeof id !== 'undefined' && id) {
         id="<%= id %>"
-    <% } %>
->
+    } 
+    %> >
     <% if (typeof title !== 'undefined' && title) { %>
-    <h3><%= title %></h3>
+        <h3><%= title %></h3>
     <% } %>
 
     <iframe src="<%= embedURL %>" type="text/html">
     </iframe>
 
     <% if (typeof partialBody !== 'undefined') { %>
-    <span>
-    <%- partialBody %>
-    </span>
+        <span>
+        <%- partialBody %>
+        </span>
     <% } %>
 </div>
