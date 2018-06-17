@@ -171,13 +171,12 @@ class EmbedYouTube extends mahabhuta.CustomElement {
 
         const code = $element.attr("code");
         if (!code) throw new Error("code required for embed-youtube");
-        const template = $element.attr('template');
-        if (!template) template = "embed-youtube.html.ejs";
+        const template = $element.attr('template') ? $element.attr('template') : "embed-youtube.html.ejs";
         // var height = $element.attr('height') ? $element.attr('height') : undefined;
-        const _class = $element.attr('class') ? $element.attr('class') : "embed-youtube";
-        const style  = $element.attr('style') ? $element.attr('style') : undefined;
-        const title  = $element.attr('title') ? $element.attr('title') : undefined;
-        const id     = $element.attr('id')    ? $element.attr('id')    : undefined;
+        const _class   = $element.attr('class') ? $element.attr('class') : "embed-youtube";
+        const style    = $element.attr('style') ? $element.attr('style') : undefined;
+        const title    = $element.attr('title') ? $element.attr('title') : undefined;
+        const id       = $element.attr('id')    ? $element.attr('id')    : undefined;
         const autoplay = $element.attr('autoplay') ? $element.attr('autoplay')    : undefined;
         dirty();
         const embedURL = new URL("https://www.youtube.com/embed/");
