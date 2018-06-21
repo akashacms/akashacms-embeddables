@@ -21,8 +21,6 @@
 
 const path     = require('path');
 const util     = require('util');
-const url      = require('url');
-const request  = require('request');
 const akasha   = require('akasharender');
 const mahabhuta = akasha.mahabhuta;
 
