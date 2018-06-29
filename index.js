@@ -196,23 +196,23 @@ module.exports.mahabhuta.addMahafunc(new EmbedYouTube());
 
 // These are here to throw errors in case old tags are used.
 
-class EmbedThumbnailContent extends mahabhuta.CustomElement {
+/* class EmbedThumbnailContent extends mahabhuta.CustomElement {
     get elementName() { return "embed-thumbnail"; }
     process($element, metadata, dirty) {
         return Promise.reject(new Error("embed-thumbnail DEPRECATED"));
     }
 }
-module.exports.mahabhuta.addMahafunc(new EmbedThumbnailContent());
+module.exports.mahabhuta.addMahafunc(new EmbedThumbnailContent()); */
 
-module.exports.mahabhuta.addMahafunc(function($, metadata, dirty, done) {
+/* module.exports.mahabhuta.addMahafunc(function($, metadata, dirty, done) {
 		// <youtube-metadata id="" href=".."/>
 		var elemsYT = [];
 		$('youtube-metadata').each(function(i, elem) { elemsYT[i] = elem; });
         if (elemsYT.length > 0) return done(new Error("DEPRECATED youtube-metadata"));
         else done();
-	});
+	}); */
 
-module.exports.mahabhuta.addMahafunc(
+/* module.exports.mahabhuta.addMahafunc(
 	function($, metadata, dirty, done) {
 		var elements = [];
 		$('framed-embed').each((i, elem) => { elements.push(elem); });
@@ -220,9 +220,9 @@ module.exports.mahabhuta.addMahafunc(
 		// console.log(`framed/simple-embed ${elements.length}`);
         if (elements.length > 0) return done(new Error("DEPRECATED framed/simple-embed"));
         else done();
-	});
+	}); */
 
-module.exports.mahabhuta.addMahafunc(
+/* module.exports.mahabhuta.addMahafunc(
 	function($, metadata, dirty, done) {
 		// <youtube-title id="" href=".."/>
 		var elemsYT = [];
@@ -233,9 +233,9 @@ module.exports.mahabhuta.addMahafunc(
 		$('framed-youtube-player').each(function(i, elem) { elemsYT.push(elem); });
         if (elemsYT.length > 0) return done(new Error("DEPRECATED youtube-title/etc"));
         else done();
-	});
+	}); */
 
-module.exports.mahabhuta.addMahafunc(
+/* module.exports.mahabhuta.addMahafunc(
 	function($, metadata, dirty, done) {
 		// <vimeo-player url="..." />
 		// <vimeo-thumbnail url="..." />
@@ -252,9 +252,9 @@ module.exports.mahabhuta.addMahafunc(
 		$('vimeo-description').each(function(i, elem) { elements.push(elem); });
         if (elements.length > 0) return done(new Error("DEPRECATED vimeo-title/etc"));
         else done();
-	});
+	}); */
 
-module.exports.mahabhuta.addMahafunc(
+/* module.exports.mahabhuta.addMahafunc(
 	function($, metadata, dirty, done) {
 		// <slideshare-embed href=".."
 		var elements = [];
@@ -262,22 +262,22 @@ module.exports.mahabhuta.addMahafunc(
 		$('slideshare-metadata').each(function(i, elem) { elements.push(elem); });
         if (elements.length > 0) return done(new Error("DEPRECATED slideshare-embed/etc"));
         else done();
-	});
+	}); */
 
-module.exports.mahabhuta.addMahafunc(
+/* module.exports.mahabhuta.addMahafunc(
 	function($, metadata, dirty, done) {
 		// <twitter-embed href=".."
 		var elements = [];
 		$('twitter-embed').each(function(i, elem) { elements.push(elem); });
         if (elements.length > 0) return done(new Error("DEPRECATED twitter-embed/etc"));
         else done();
-	});
+	}); */
 
-module.exports.mahabhuta.addMahafunc(
+/* module.exports.mahabhuta.addMahafunc(
 	function($, metadata, dirty, done) {
 		// <oembed href="..." optional: template="..."/>
 		var elemsOE = [];
 		$('oembed').each(function(i, elem) { elemsOE[i] = elem; });
         if (elemsOE.length > 0) return done(new Error("DEPRECATED oembed/etc"));
         else done();
-	});
+	}); */
