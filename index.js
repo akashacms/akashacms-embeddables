@@ -194,6 +194,30 @@ class EmbedYouTube extends mahabhuta.CustomElement {
 }
 module.exports.mahabhuta.addMahafunc(new EmbedYouTube());
 
+class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
+    get elementName() { return "video-players-from-videourls"; }
+    async process($element, metadata, dirty) {
+        const template = $element.attr('template') 
+                ? $element.attr('template') 
+                : "video-players-from-videourls.html.ejs";
+        dirty();
+        return akasha.partial(metadata.config, template, metadata);
+    }
+}
+module.exports.mahabhuta.addMahafunc(new VideoPlayersFromVideoURLS());
+
+class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
+    get elementName() { return "video-thumbnail-from-videourls"; }
+    async process($element, metadata, dirty) {
+        const template = $element.attr('template') 
+                ? $element.attr('template') 
+                : "video-thumbnail-from-videourls.html.ejs";
+        dirty();
+        return akasha.partial(metadata.config, template, metadata);
+    }
+}
+module.exports.mahabhuta.addMahafunc(new VideoThumbnailsFromVideoURLS());
+
 // These are here to throw errors in case old tags are used.
 
 /* class EmbedThumbnailContent extends mahabhuta.CustomElement {
