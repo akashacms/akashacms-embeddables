@@ -123,12 +123,13 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
             enableResponsive = "embed-responsive embed-responsive-16by9";
         } */
 
+        const data = await metadata.config.plugin(pluginName).fetchEmbedData(href);
+        
         let title2use;
         if (title) title2use = title;
         else if (data.metadata && data.metadata.title) title2use = data.metadata.title;
         else title2use = "";
 
-        const data = await metadata.config.plugin(pluginName).fetchEmbedData(href);
         const mdata = {
             embedData: data,
             embedCode: data.html,
