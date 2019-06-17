@@ -2,7 +2,7 @@
 <%
 if (typeof videoUrls !== "undefined" && videoUrls) {
     videoUrls.forEach(function(videoData) { %>
-        <embed-resource
+        <embed-resource class="framed-video-player"
         template="embed-resource-framed.html.ejs" <%
             if (videoData.hideDescription) { %>data-hide-description='<%= videoData.hideDescription %>' <% }
         %>

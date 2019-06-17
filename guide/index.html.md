@@ -36,8 +36,10 @@ config
 
 # Custom Tags
 
+## `embed-resource`
+
 ```
-<embed-resource href="URL" template="TEMPLATE" class="CLASS-NAME" style="STYLE" title="TITLE TO OVERRIDE" width="WIDTH" height="HEIGHT">
+<embed-resource href="URL" template="TEMPLATE" class="CLASS-NAME" style="STYLE" title="TITLE TO OVERRIDE" width="WIDTH">
    Descriptive text if appropriate
 </embed-resource>
 ```
@@ -208,3 +210,66 @@ And a Slideshare presentation https://www.slideshare.net/technosanity/kia-soul-e
         'https://public.slidesharecdn.com/b/images/thumbnail.png',
         'https://www.bizographics.com/collect/?pid=870&fmt=gif' } } }
 ```
+
+## `embed-youtube`
+
+```
+<embed-youtube code="CODE" template="TEMPLATE" class="CLASS" style="STYLE" title="TITLE" id="ID" autoplay="AUTOPLAY" description="DESCRIPTION"></embed-youtube>
+```
+
+This does not use any API to retrieve data.  Instead it directly uses the documented `iframe` tag for YouTube to set up a player.  Therefore this renders more quickly, by not requiring a network request.
+
+The `CODE` is the video code in the YouTube URL.  Otherwise the attributes are as described for `embed-resource`.
+
+The default template is `embed-youtube.html.ejs`
+
+For every `embed-youtube` an OpenGraph image is promoted using the `opengraph-image` tag.
+
+## `video-players-from-videourls` and `video-thumbnail-from-videourls`
+
+This allows for an array of embeddable resources to be put in the document frontmatter.  That array is then rendered into the output.
+
+In each case a `template="TEMPLATE"` tag is available to override the default template.
+
+There are two possible arrays: `videoUrls` and `youtubeUrls`.  The first uses `embed-resource` to render the players, while the second uses `embed-youtube`.
+
+The fields in the array entries are:
+
+* `url`: The URL for the embeddable resource
+* `code`: For `embed-youtube` the code from the YouTube URL
+* `title`: The title string to use in displaying the video
+* `description`: The descriptive text to use along with the video
+
+Of course for `videoUrls` the default for title and description is retrieved by querying the corresponding service over the Internet.  For `youtubeUrls` no queries are sent over the Internet, so if you want a title and description you'll have to insert those yourself.
+
+For every entry in `youtubeUrls` an OpenGraph image is promoted using the `opengraph-image` tag.
+
+The default templates are:
+
+* `video-players-from-videourls.html.ejs`
+* `video-thumbnail-from-videourls.html.ejs`
+
+For `video-thumbnail-from-videourls`, the tag looks for the first entry in the `videoUrls` array, and then constructs an `embed-resource` tag using the `embed-thumbnail.html.ejs` template.  The effect of this is to promote the thumbnail corresponding to the first video as the thumbnail image for the article.
+
+Example:
+
+```
+youtubeUrls:
+  - url: https://www.youtube.com/watch?v=3g7cgUm7o9k
+    code: 3g7cgUm7o9k
+    title: GM EV1 TV Commercial 1
+
+  - url: https://www.youtube.com/watch?v=QaRtNdVx0b4
+    code: QaRtNdVx0b4
+    title: GM EV1 TV Commercial 2
+
+  - url: https://www.youtube.com/watch?v=aPKxsLlU6Co
+    code: aPKxsLlU6Co
+    title: GM EV1 TV Commercial 3
+
+  - url: https://www.youtube.com/watch?v=TRB14_OyWGM
+    code: TRB14_OyWGM
+    title: GM EV1 TV Commercial 4
+```
+
+In this case we've used `youtubeUrls`.  For that array, the URL attribute is ignored but by putting it here it's possible to easily switch to `videoUrls` if desired.  As a `title` is specified, the video player will have a header text above it, but as no `description` is supplied there will be no text below the player.

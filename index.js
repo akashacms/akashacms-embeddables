@@ -123,16 +123,21 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
             enableResponsive = "embed-responsive embed-responsive-16by9";
         } */
 
+        let title2use;
+        if (title) title2use = title;
+        else if (data.metadata && data.metadata.title) title2use = data.metadata.title;
+        else title2use = "";
+
         const data = await metadata.config.plugin(pluginName).fetchEmbedData(href);
         const mdata = {
             embedData: data,
             embedCode: data.html,
-            title: data.metadata && data.metadata.title ? data.metadata.title : "",
+            title: title2use,
             embedUrl: data.author_url ? data.author_url : href,
             embedSource: data.author_name ? data.author_name : data.author_url,
             embedClass: _class,
             embedHref: href,
-            width, style, align
+            width, style, align, 
             // , enableResponsive
         };
         if (data.metadata && data.metadata.ogDescription) {
