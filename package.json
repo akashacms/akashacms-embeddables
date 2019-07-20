@@ -11,12 +11,11 @@
     "type": "git",
     "url": "git://github.com/akashacms/akashacms-embeddables.git"
   },
-  "version": "0.6.11",
+  "version": "0.7.0",
   "engines": {
-    "node": ">=8.4"
+    "node": ">=12.4"
   },
   "dependencies": {
-    "debug": "^2.2.0",
     "oembetter": "^0.1.15",
     "meta-extractor": "*"
   }

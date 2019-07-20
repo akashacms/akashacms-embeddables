@@ -56,24 +56,29 @@ oembetter.addFallback(async function(url, options, callback) {
     }
 });
 
-const log     = require('debug')('akasha:embeddables-plugin');
-const error   = require('debug')('akasha:error-embeddables-plugin');
-
 const pluginName = "akashacms-embeddables";
 
 var leveldb;
+
+const _plugin_config = Symbol('config');
+const _plugin_options = Symbol('options');
 
 module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 	constructor() {
 		super(pluginName);
 	}
 
-    configure(config) {
-        this._config = config;
+    configure(config, options) {
+        this[_plugin_config] = config;
+        this[_plugin_options] = options;
+        options.config = config;
         config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addAssetsDir(path.join(__dirname, 'assets'));
-        config.addMahabhuta(module.exports.mahabhuta);
+        config.addMahabhuta(module.exports.mahabhutaArray(options));
     }
+
+    get config() { return this[_plugin_config]; }
+    get options() { return this[_plugin_options]; }
 
     fetchEmbedData(embedurl) {
 
@@ -99,7 +104,14 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
     }
 };
 
-module.exports.mahabhuta = new mahabhuta.MahafuncArray(pluginName, {});
+module.exports.mahabhutaArray = function(options) {
+    let ret = new mahabhuta.MahafuncArray(pluginName, options);
+    ret.addMahafunc(new EmbedResourceContent());
+    ret.addMahafunc(new EmbedYouTube());
+    ret.addMahafunc(new VideoPlayersFromVideoURLS());
+    ret.addMahafunc(new VideoThumbnailsFromVideoURLS());
+    return ret;
+};
 
 class EmbedResourceContent extends mahabhuta.CustomElement {
     get elementName() { return "embed-resource"; }
@@ -123,7 +135,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
             enableResponsive = "embed-responsive embed-responsive-16by9";
         } */
 
-        const data = await metadata.config.plugin(pluginName).fetchEmbedData(href);
+        const data = await this.array.options.config.plugin(pluginName).fetchEmbedData(href);
         
         let title2use;
         if (title) title2use = title;
@@ -162,10 +174,9 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
         if (!mdata.embedCode) {
             throw new Error(`EmbedResourceContent FAIL to retrieve data for ${href} in ${metadata.document.path} data ${data} mdata ${util.inspect(mdata)}`);
         }
-        return akasha.partial(metadata.config, template, mdata);
+        return akasha.partial(this.array.options.config, template, mdata);
     }
 }
-module.exports.mahabhuta.addMahafunc(new EmbedResourceContent());
 
 class EmbedYouTube extends mahabhuta.CustomElement {
     get elementName() { return "embed-youtube"; }
@@ -195,10 +206,9 @@ class EmbedYouTube extends mahabhuta.CustomElement {
             embedClass: _class, id,
             title, style, description
         };
-        return akasha.partial(metadata.config, template, mdata);
+        return akasha.partial(this.array.options.config, template, mdata);
     }
 }
-module.exports.mahabhuta.addMahafunc(new EmbedYouTube());
 
 class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
     get elementName() { return "video-players-from-videourls"; }
@@ -207,10 +217,9 @@ class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
                 ? $element.attr('template') 
                 : "video-players-from-videourls.html.ejs";
         dirty();
-        return akasha.partial(metadata.config, template, metadata);
+        return akasha.partial(this.array.options.config, template, metadata);
     }
 }
-module.exports.mahabhuta.addMahafunc(new VideoPlayersFromVideoURLS());
 
 class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
     get elementName() { return "video-thumbnail-from-videourls"; }
@@ -219,10 +228,9 @@ class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
                 ? $element.attr('template') 
                 : "video-thumbnail-from-videourls.html.ejs";
         dirty();
-        return akasha.partial(metadata.config, template, metadata);
+        return akasha.partial(this.array.options.config, template, metadata);
     }
 }
-module.exports.mahabhuta.addMahafunc(new VideoThumbnailsFromVideoURLS());
 
 // These are here to throw errors in case old tags are used.
 
