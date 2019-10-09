@@ -56,7 +56,7 @@ oembetter.addFallback(async function(url, options, callback) {
     }
 });
 
-const pluginName = "akashacms-embeddables";
+const pluginName = "@akashacms/plugins-embeddables";
 
 var leveldb;
 

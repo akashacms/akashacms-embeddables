@@ -12,10 +12,10 @@ It can be tedious to manually go to sites to fetch the embed code.  The `akashac
 
 Add the following to `package.json`
 
-```
+```json
 "dependencies": {
       ...
-      "akashacms-embeddables": ">=0.6",
+      "@akashacms/plugins-embeddables": "^0.7.x",
       ...
 }
 ```
@@ -26,10 +26,10 @@ Once added to `package.json` run: `npm install`
 
 Add the following to `config.js`
 
-```
+```js
 config
     ...
-    .use(require('akashacms-embeddables'))
+    .use(require('@akashacms/plugins-embeddables'))
     ...
 ```
 
@@ -38,8 +38,13 @@ config
 
 ## `embed-resource`
 
-```
-<embed-resource href="URL" template="TEMPLATE" class="CLASS-NAME" style="STYLE" title="TITLE TO OVERRIDE" width="WIDTH">
+```html
+<embed-resource href="URL"
+    template="TEMPLATE"
+    class="CLASS-NAME"
+    style="STYLE"
+    title="TITLE TO OVERRIDE"
+    width="WIDTH">
    Descriptive text if appropriate
 </embed-resource>
 ```
@@ -74,7 +79,7 @@ The `embedData` primarily contains oEmbed data (oEmbed spec: http://oembed.com/)
 
 An example of the available data for https://www.youtube.com/watch?v=QweNsLesMrM is:
 
-```
+```js
 { version: '1.0',
   thumbnail_url: 'https://i.ytimg.com/vi/QweNsLesMrM/hqdefault.jpg',
   width: 480,
@@ -130,7 +135,7 @@ An example of the available data for https://www.youtube.com/watch?v=QweNsLesMrM
 
 For a Facebook post at https://www.facebook.com/joseph.romm/posts/10153908777222475
 
-```
+```js
 { author_name: 'Joseph',
   author_url: 'https://www.facebook.com/joseph.romm',
   provider_url: 'https://www.facebook.com',
@@ -157,7 +162,7 @@ For a Facebook post at https://www.facebook.com/joseph.romm/posts/10153908777222
 
 And a Slideshare presentation https://www.slideshare.net/technosanity/kia-soul-ev-for-bayleafs-meeting
 
-```
+```js
 { html: '<iframe src="https://www.slideshare.net/slideshow/embed_code/key/uWsjJ8e4e6Cemu" width="427" height="356" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:1px solid #CCC; border-width:1px; margin-bottom:5px; max-width: 100%;" allowfullscreen> </iframe> <div style="margin-bottom:5px"> <strong> <a href="https://www.slideshare.net/technosanity/kia-soul-ev-for-bayleafs-meeting" title="Kia Soul EV for BayLEAF&#x27;s meeting - 2014-11" target="_blank">Kia Soul EV for BayLEAF&#x27;s meeting - 2014-11</a> </strong> from <strong><a target="_blank" href="https://www.slideshare.net/technosanity">David Herron</a></strong> </div>\n\n',
   conversion_version: 2,
   version_no: '1415551458',
@@ -213,8 +218,15 @@ And a Slideshare presentation https://www.slideshare.net/technosanity/kia-soul-e
 
 ## `embed-youtube`
 
-```
-<embed-youtube code="CODE" template="TEMPLATE" class="CLASS" style="STYLE" title="TITLE" id="ID" autoplay="AUTOPLAY" description="DESCRIPTION"></embed-youtube>
+```html
+<embed-youtube code="CODE"
+    template="TEMPLATE"
+    class="CLASS"
+    style="STYLE"
+    title="TITLE"
+    id="ID"
+    autoplay="AUTOPLAY"
+    description="DESCRIPTION"></embed-youtube>
 ```
 
 This does not use any API to retrieve data.  Instead it directly uses the documented `iframe` tag for YouTube to set up a player.  Therefore this renders more quickly, by not requiring a network request.
@@ -253,7 +265,7 @@ For `video-thumbnail-from-videourls`, the tag looks for the first entry in the `
 
 Example:
 
-```
+```yaml
 youtubeUrls:
   - url: https://www.youtube.com/watch?v=3g7cgUm7o9k
     code: 3g7cgUm7o9k

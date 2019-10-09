@@ -4,16 +4,19 @@
     "email": "david@davidherron.com",
     "url": "http://davidherron.com"
   },
-  "name": "akashacms-embeddables",
+  "name": "@akashacms/plugins-embeddables",
   "description": "A plugin for AkashaCMS supporting embedding thingymajigs in pages",
   "homepage": "https://akashacms.com/plugins/embeddables/index.html",
   "repository": {
     "type": "git",
     "url": "git://github.com/akashacms/akashacms-embeddables.git"
   },
-  "version": "0.7.0",
+  "version": "0.7.1",
   "engines": {
     "node": ">=12.4"
+  },
+  "scripts": {
+      "dopublish": "npm publish --access public"
   },
   "dependencies": {
     "oembetter": "^0.1.15",
