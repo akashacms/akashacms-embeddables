@@ -11,15 +11,16 @@
     "type": "git",
     "url": "git://github.com/akashacms/akashacms-embeddables.git"
   },
-  "version": "0.7.1",
+  "version": "0.7.2",
   "engines": {
     "node": ">=12.4"
   },
   "scripts": {
-      "dopublish": "npm publish --access public"
+    "dopublish": "npm publish --access public"
   },
   "dependencies": {
-    "oembetter": "^0.1.15",
-    "meta-extractor": "*"
+    "meta-extractor": "^2.x",
+    "node-fetch": "^2.6.0",
+    "oembetter": "^0.1.22"
   }
 }

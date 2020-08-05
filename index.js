@@ -21,6 +21,7 @@
 
 const path     = require('path');
 const util     = require('util');
+const fetch    = require('node-fetch');
 const akasha   = require('akasharender');
 const mahabhuta = akasha.mahabhuta;
 
@@ -80,13 +81,13 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
     get config() { return this[_plugin_config]; }
     get options() { return this[_plugin_options]; }
 
-    fetchEmbedData(embedurl) {
+    async fetchEmbedData(embedurl) {
 
         var data = akasha.cache.retrieve(pluginName+':fetchEmbedData', embedurl);
         if (data) {
             return Promise.resolve(data);
         }
-        return new Promise((resolve, reject) => {
+        let ret = await new Promise((resolve, reject) => {
             oembetter.fetch(embedurl, (err, result) => {
                 if (err) {
                     console.error(`${pluginName} fetchEmbedData FAIL on ${embedurl} because ${err}`);
@@ -94,6 +95,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                 } else {
                     try {
                         akasha.cache.persist(pluginName+':fetchEmbedData', embedurl, result);
+                        // console.log(`${pluginName} fetchEmbedData successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
                     } catch (err2) {
                         console.error(`${pluginName} fetchEmbedData akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
                     }
@@ -101,6 +103,26 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                 }
             });
         });
+        if (!ret.html && embedurl.indexOf('twitter.com') >= 0) {
+            // It's a Twitter URL, and no HTML code
+            // For some reason oembetter has stopped working with Tweets
+            // The Twitter documentation offers this.
+            // See: https://developer.twitter.com/en/docs/twitter-for-websites/embedded-tweets/overview
+            let twdata = await fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
+            let twjson = await twdata.json();
+            if (twjson.html) {
+                ret.url = twjson.url;
+                ret.author_name = twjson.author_name;
+                ret.author_url = twjson.author_url;
+                ret.width = twjson.width;
+                ret.height = twjson.height;
+                ret.provider_name = twjson.provider_name;
+                ret.provider_url = twjson.provider_url;
+                ret.html = twjson.html;
+            }
+            // console.log(`${pluginName} fetchEmbedData fetch ${embedurl} ==> ${util.inspect(twjson)} ${util.inspect(ret)}`);
+        }
+        return ret;
     }
 };
 
