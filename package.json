@@ -11,7 +11,7 @@
     "type": "git",
     "url": "git://github.com/akashacms/akashacms-embeddables.git"
   },
-  "version": "0.7.2",
+  "version": "0.7.3",
   "engines": {
     "node": ">=12.4"
   },
@@ -19,8 +19,10 @@
     "dopublish": "npm publish --access public"
   },
   "dependencies": {
+    "commander": "^7.x",
     "meta-extractor": "^2.x",
-    "node-fetch": "^2.6.0",
-    "oembetter": "^0.1.22"
+    "node-fetch": "^2.6.x",
+    "oembetter": "^0.1.x",
+    "unfurl.js": "^5.2.x"
   }
 }

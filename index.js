@@ -27,6 +27,12 @@ const mahabhuta = akasha.mahabhuta;
 
 const extract = require('meta-extractor');
 const oembetter = require('oembetter')();
+const { unfurl } = require('unfurl.js');
+
+// oembetter.whitelist([ 'youtube.com', 'facebook.com', 'twitter.com', 'vimeo.com', 'wufoo.com' ]);
+
+oembetter.whitelist(oembetter.suggestedWhitelist);
+oembetter.endpoints(oembetter.suggestedEndpoints);
 
 const doExtract = (url) => {
     return new Promise((resolve, reject) => {
@@ -81,49 +87,263 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
     get config() { return this[_plugin_config]; }
     get options() { return this[_plugin_options]; }
 
-    async fetchEmbedData(embedurl) {
-
-        var data = akasha.cache.retrieve(pluginName+':fetchEmbedData', embedurl);
+    async fetchOembetter(embedurl) {
+        var data = akasha.cache.retrieve(pluginName+':fetchOembetter', embedurl);
         if (data) {
             return Promise.resolve(data);
         }
         let ret = await new Promise((resolve, reject) => {
             oembetter.fetch(embedurl, (err, result) => {
                 if (err) {
-                    console.error(`${pluginName} fetchEmbedData FAIL on ${embedurl} because ${err}`);
+                    console.error(`${pluginName} fetchOembetter FAIL on ${embedurl} because ${err}`);
                     reject(err);
                 } else {
                     try {
-                        akasha.cache.persist(pluginName+':fetchEmbedData', embedurl, result);
-                        // console.log(`${pluginName} fetchEmbedData successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
+                        akasha.cache.persist(pluginName+':fetchOembetter', embedurl, result);
+                        // console.log(`${pluginName} fetchOembetter successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
                     } catch (err2) {
-                        console.error(`${pluginName} fetchEmbedData akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
+                        console.error(`${pluginName} fetchOembetter akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
                     }
                     resolve(result);
                 }
             });
         });
-        if (!ret.html && embedurl.indexOf('twitter.com') >= 0) {
-            // It's a Twitter URL, and no HTML code
-            // For some reason oembetter has stopped working with Tweets
-            // The Twitter documentation offers this.
-            // See: https://developer.twitter.com/en/docs/twitter-for-websites/embedded-tweets/overview
-            let twdata = await fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
-            let twjson = await twdata.json();
-            if (twjson.html) {
-                ret.url = twjson.url;
-                ret.author_name = twjson.author_name;
-                ret.author_url = twjson.author_url;
-                ret.width = twjson.width;
-                ret.height = twjson.height;
-                ret.provider_name = twjson.provider_name;
-                ret.provider_url = twjson.provider_url;
-                ret.html = twjson.html;
-            }
-            // console.log(`${pluginName} fetchEmbedData fetch ${embedurl} ==> ${util.inspect(twjson)} ${util.inspect(ret)}`);
+        return ret;
+    }
+
+    async fetchUnfurl(embedurl) {
+        // console.log(embedurl);
+        var data = akasha.cache.retrieve(pluginName+':fetchUnfurl', embedurl);
+        if (data) {
+            return Promise.resolve(data);
+        }
+        let result = await unfurl(embedurl);
+        try {
+            akasha.cache.persist(pluginName+':fetchUnfurl', embedurl, result);
+            // console.log(`${pluginName} fetchUnfurl successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
+        } catch (err2) {
+            console.error(`${pluginName} fetchUnfurl akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
+        }
+        return result;
+    }
+
+    async fetchFacebookEmbed(embedurl) {
+
+        // This is our only solution for now.
+        // An option is to implement oembed-parser and to
+        // require the user provide Facebook access tokens.
+
+        return {
+            html: `<a href="${embedurl}">${embedurl}</a>`,
+            metadata: {}
+        };
+
+        /*
+         * This does not work reliably.  It seems that now Facebook
+         * requires an access token.  The only Node.js package I've
+         * found which discusses this is https://www.npmjs.com/package/oembed-parser
+         *
+         * In cli.js there is an example of using that package.
+         *
+         * WIth Oembetter, we might get a few queries but are quickly
+         * shut out from receiving data.  With oembed-parser, we're
+         * simply told that an access token is required.
+         *
+         * That leaves us with one solution, which is to return just
+         * the HTML for a link.
+         *
+        const data = await this.fetchOembetter(embedurl);
+        // There's no embed code provided so we must concoct something
+        data.html = data.metadata.html = `
+        <div class="ak-embeddable ak-embeddable-facebook"
+            data-embedurl="${embedurl}"
+            >
+            <span class="ak-embeddable-title ak-embeddable-facebook-title">
+            <strong>
+            ${data.metadata.title}
+            </strong>
+            </span>
+            <img src="${data.metadata.ogImage}"
+                class="ak-embeddable-img ak-embeddable-facebook-img"
+                />
+            <span class="ak-embeddable-description ak-embeddable-facebook-description">
+            ${data.metadata.description}
+            </span>
+            <span class="ak-embeddable-author ak-embeddable-facebook-author">
+            <a href="${embedurl}">${data.metadata.ogTitle}</a>
+            </span>
+        </div>
+        `;
+        return data;
+        */
+    }
+
+    async fetchTwitterEmbed(embedurl) {
+
+        let ret = {};
+
+        // It's a Twitter URL, and no HTML code
+        // For some reason oembetter has stopped working with Tweets
+        // The Twitter documentation offers this.
+        // See: https://developer.twitter.com/en/docs/twitter-for-websites/embedded-tweets/overview
+        let twdata = await fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
+        let twjson = await twdata.json();
+        if (twjson.html) {
+            ret.url = twjson.url;
+            ret.author_name = twjson.author_name;
+            ret.author_url = twjson.author_url;
+            ret.width = twjson.width;
+            ret.height = twjson.height;
+            ret.provider_name = twjson.provider_name;
+            ret.provider_url = twjson.provider_url;
+            ret.html = twjson.html;
+        }
+        // console.log(`${pluginName} fetchEmbedData fetch ${embedurl} ==> ${util.inspect(twjson)} ${util.inspect(ret)}`);
+
+        return ret;
+    }
+
+    async fetchYouTubeEmbed(embedurl) {
+        let ytdata = await this.fetchUnfurl(embedurl);
+        let ret = {
+            ytdata:        ytdata,
+            url:           ytdata.open_graph.url,
+            author_name:   ytdata.oEmbed.author_name,
+            author_url:    ytdata.oEmbed.author_url,
+            width:         ytdata.oEmbed.width,
+            heght:         ytdata.oEmbed.height,
+            provider_name: ytdata.oEmbed.provider_name,
+            provider_url:  ytdata.oEmbed.provider_url,
+            description:   ytdata.open_graph.description,
+            html:          ytdata.oEmbed.html
+        };
+        if (ytdata.open_graph.images
+         && ytdata.open_graph.images.length >= 1
+         && ytdata.open_graph.images[0].url) {
+            ret.image_url = ytdata.open_graph.images[0].url;
         }
         return ret;
     }
+
+    async fetchSlideShareEmbed(embedurl) {
+        let ytdata = await this.fetchUnfurl(embedurl);
+        let ret = {
+            ytdata:        ytdata,
+            url:           ytdata.open_graph.url,
+            author_name:   ytdata.oEmbed.author_name,
+            author_url:    ytdata.oEmbed.author_url,
+            width:         ytdata.oEmbed.width,
+            heght:         ytdata.oEmbed.height,
+            provider_name: ytdata.oEmbed.provider_name,
+            provider_url:  ytdata.oEmbed.provider_url,
+            description:   ytdata.open_graph.description,
+            html:          ytdata.oEmbed.html
+        };
+        if (ytdata.open_graph.images
+         && ytdata.open_graph.images.length >= 1
+         && ytdata.open_graph.images[0].url) {
+            ret.image_url = ytdata.open_graph.images[0].url;
+        }
+        return ret;
+    }
+
+    // Yes, this function is nearly identical with some of the
+    // preceeding functions.  It is possible that those other sites
+    // will return specific data through Unfurl that we want to
+    // expose.  Hence, the multiple implementations.
+
+    async fetchUnfurlResource(embedurl) {
+        // console.log(embedurl);
+        let ytdata = await this.fetchUnfurl(embedurl);
+        let ret = {
+            ytdata:        ytdata,
+            url:           ytdata.open_graph.url,
+            author_name:   ytdata.oEmbed.author_name,
+            author_url:    ytdata.oEmbed.author_url,
+            width:         ytdata.oEmbed.width,
+            heght:         ytdata.oEmbed.height,
+            provider_name: ytdata.oEmbed.provider_name,
+            provider_url:  ytdata.oEmbed.provider_url,
+            description:   ytdata.open_graph.description,
+            html:          ytdata.oEmbed.html
+        };
+        if (ytdata.open_graph.images
+         && ytdata.open_graph.images.length >= 1
+         && ytdata.open_graph.images[0].url) {
+            ret.image_url = ytdata.open_graph.images[0].url;
+        }
+        return ret;
+    }
+
+    async resource(attrs) {
+
+        // Each of a specific list of sites might require
+        // specific treatment for that site.  Hence, we will
+        // use multiple fetchXYZZY functions.
+        //
+        // But in practice it was found that Unfurl provides
+        // pretty good information and does a good job of
+        // regularizing the data irregardless of which site
+        // the data comes from.  So we ended up with one
+        // function, fetchUnfurlResource.
+
+        let data;
+        if (attrs.href.indexOf('facebook.com') >= 0) {
+            data = await this.fetchFacebookEmbed(attrs.href);
+        } else if (attrs.href.indexOf('twitter.com') >= 0) {
+            // data = await this.fetchTwitterEmbed(attrs.href);
+            data = await this.fetchUnfurlResource(attrs.href);
+        } else if (attrs.href.indexOf('youtube.com') >= 0) {
+            // data = await this.fetchYouTubeEmbed(attrs.href);
+            data = await this.fetchUnfurlResource(attrs.href);
+        } else if (attrs.href.indexOf('slideshare.com') >= 0) {
+            // data = await this.fetchSlideShareEmbed(attrs.href);
+            data = await this.fetchUnfurlResource(attrs.href);
+        } else {
+            data = await this.fetchUnfurlResource(attrs.href);
+        }
+
+        let title2use;
+        if (attrs.title) title2use = attrs.title;
+        else if (data.metadata && data.metadata.title) title2use = data.metadata.title;
+        else title2use = "";
+
+        const mdata = {
+            embedData: data,
+            embedCode: data.html,
+            title: title2use,
+            embedUrl: data.author_url ? data.author_url : attrs.href,
+            embedSource: data.author_name ? data.author_name : data.author_url,
+            embedClass: attrs._class,
+            embedHref: attrs.href,
+            width: attrs.width, style: attrs.style, align: attrs.align, 
+            // , enableResponsive
+        };
+        if (data.description) {
+            mdata.description = data.description;
+        } else if (data.metadata && data.metadata.ogDescription) {
+            mdata.description = data.metadata.ogDescription;
+        } else if (data.metadata && data.metadata.description) {
+            mdata.description = data.metadata.description;
+        } else if (data.metadata && data.metadata.twitterDescription) {
+            mdata.description = data.metadata.twitterDescription;
+        } else {
+            mdata.description = "";
+        }
+        if (data.image_url) {
+            mdata.imageUrl = data.image_url;
+        } else if (data.metadata && data.metadata.ogImage) {
+            mdata.imageUrl = data.metadata.ogImage;
+        } else if (data.metadata && data.metadata.twitterImage) {
+            mdata.imageUrl = data.metadata.twitterImage;
+        } else if (data.thumbnail_url) {
+            mdata.imageUrl = data.thumbnail_url;
+        } else {
+            mdata.imageUrl = "/no-image.gif";
+        }
+        return mdata;
+    }
+
 };
 
 module.exports.mahabhutaArray = function(options) {
@@ -151,51 +371,14 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
 
         // TODO capture the body text, making it available to the template
 
-        /* var enableResponsive = $element.attr('enable-responsive') ? $element.attr('enable-responsive') : undefined;
-
-        if (enableResponsive && enableResponsive === "yes") {
-            enableResponsive = "embed-responsive embed-responsive-16by9";
-        } */
-
-        const data = await this.array.options.config.plugin(pluginName).fetchEmbedData(href);
+        const mdata = await this.array.options.config.plugin(pluginName).resource({
+            href, template, width, _class, style, align, title
+        });
         
-        let title2use;
-        if (title) title2use = title;
-        else if (data.metadata && data.metadata.title) title2use = data.metadata.title;
-        else title2use = "";
-
-        const mdata = {
-            embedData: data,
-            embedCode: data.html,
-            title: title2use,
-            embedUrl: data.author_url ? data.author_url : href,
-            embedSource: data.author_name ? data.author_name : data.author_url,
-            embedClass: _class,
-            embedHref: href,
-            width, style, align, 
-            // , enableResponsive
-        };
-        if (data.metadata && data.metadata.ogDescription) {
-            mdata.description = data.metadata.ogDescription;
-        } else if (data.metadata && data.metadata.description) {
-            mdata.description = data.metadata.description;
-        } else if (data.metadata && data.metadata.twitterDescription) {
-            mdata.description = data.metadata.twitterDescription;
-        } else {
-            mdata.description = "";
-        }
-        if (data.metadata && data.metadata.ogImage) {
-            mdata.imageUrl = data.metadata.ogImage;
-        } else if (data.metadata && data.metadata.twitterImage) {
-            mdata.imageUrl = data.metadata.twitterImage;
-        } else if (data.thumbnail_url) {
-            mdata.imageUrl = data.thumbnail_url;
-        } else {
-            mdata.imageUrl = "/no-image.gif";
-        }
         if (!mdata.embedCode) {
-            throw new Error(`EmbedResourceContent FAIL to retrieve data for ${href} in ${metadata.document.path} data ${data} mdata ${util.inspect(mdata)}`);
+            throw new Error(`EmbedResourceContent FAIL to retrieve data for ${attrs.href} in ${metadata.document.path} data ${data} mdata ${util.inspect(mdata)}`);
         }
+
         return akasha.partial(this.array.options.config, template, mdata);
     }
 }
