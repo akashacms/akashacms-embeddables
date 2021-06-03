@@ -88,9 +88,18 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
     get options() { return this[_plugin_options]; }
 
     async fetchOembetter(embedurl) {
-        var data = akasha.cache.retrieve(pluginName+':fetchOembetter', embedurl);
+        // var data = akasha.cache.retrieve(pluginName+':fetchOembetter', embedurl);
+        // if (data) {
+        //    return Promise.resolve(data);
+        // }
+
+        let cache = (await akasha.cache).getCache(pluginName);
+        let data = cache.find({
+            type: 'fetchOembetter',
+            url: embedurl
+        });
         if (data) {
-            return Promise.resolve(data);
+            return data;
         }
         let ret = await new Promise((resolve, reject) => {
             oembetter.fetch(embedurl, (err, result) => {
@@ -99,7 +108,12 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                     reject(err);
                 } else {
                     try {
-                        akasha.cache.persist(pluginName+':fetchOembetter', embedurl, result);
+                        cache.insert({
+                            type: 'fetchOembetter',
+                            url: embedurl,
+                            result: result
+                        });
+                        // akasha.cache.persist(pluginName+':fetchOembetter', embedurl, result);
                         // console.log(`${pluginName} fetchOembetter successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
                     } catch (err2) {
                         console.error(`${pluginName} fetchOembetter akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
@@ -113,13 +127,26 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 
     async fetchUnfurl(embedurl) {
         // console.log(embedurl);
-        var data = akasha.cache.retrieve(pluginName+':fetchUnfurl', embedurl);
+        // var data = akasha.cache.retrieve(pluginName+':fetchUnfurl', embedurl);
+        // if (data) {
+        //    return Promise.resolve(data);
+        // }
+        let cache = (await akasha.cache).getCache(pluginName);
+        let data = cache.find({
+            type: 'fetchUnfurl',
+            url: embedurl
+        });
         if (data) {
-            return Promise.resolve(data);
+            return data;
         }
         let result = await unfurl(embedurl);
         try {
-            akasha.cache.persist(pluginName+':fetchUnfurl', embedurl, result);
+            cache.insert({
+                type: 'fetchUnfurl',
+                url: embedurl,
+                result: result
+            });
+            // akasha.cache.persist(pluginName+':fetchUnfurl', embedurl, result);
             // console.log(`${pluginName} fetchUnfurl successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
         } catch (err2) {
             console.error(`${pluginName} fetchUnfurl akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
