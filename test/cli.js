@@ -6,7 +6,7 @@
 
 const program   = require('commander');
 const Plugin    = require('../index.js');
-const { extract } = require('oembed-parser');
+// const { extract } = require('oembed-parser');
 const { unfurl } = require('unfurl.js');
 const fetch    = require('node-fetch');
 

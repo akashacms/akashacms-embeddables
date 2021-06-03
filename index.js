@@ -93,7 +93,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         //    return Promise.resolve(data);
         // }
 
-        let cache = (await akasha.cache).getCache(pluginName);
+        let cache = (await akasha.cache).getCache(pluginName, { create: true });
         let data = cache.find({
             type: 'fetchOembetter',
             url: embedurl
@@ -131,15 +131,21 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         // if (data) {
         //    return Promise.resolve(data);
         // }
-        let cache = (await akasha.cache).getCache(pluginName);
+        let cache = (await akasha.cache).getCache(pluginName, { create: true });
         let data = cache.find({
             type: 'fetchUnfurl',
             url: embedurl
         });
-        if (data) {
-            return data;
+        // console.log(`fetchUnfurl ${embedurl} len=${data.length}`, data);
+        if (data.length >= 1) {
+            let ret = data[0];
+            if (ret.result) return ret.result;
+            else {
+                throw new Error(`fetchUnfurl got incorrect data from cache for ${embedurl} ==> ${util.inspect(data)}`);
+            }
         }
         let result = await unfurl(embedurl);
+        // console.log(`fetchUnfurl ${embedurl} unfurl result `, result);
         try {
             cache.insert({
                 type: 'fetchUnfurl',
@@ -231,7 +237,9 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
     }
 
     async fetchYouTubeEmbed(embedurl) {
-        let ytdata = await this.fetchUnfurl(embedurl);
+        let data = await this.fetchUnfurl(embedurl);
+        let ytdata = data; // .result;
+        // let ytdata = await this.fetchUnfurl(embedurl);
         let ret = {
             ytdata:        ytdata,
             url:           ytdata.open_graph.url,
@@ -253,7 +261,9 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
     }
 
     async fetchSlideShareEmbed(embedurl) {
-        let ytdata = await this.fetchUnfurl(embedurl);
+        let data = await this.fetchUnfurl(embedurl);
+        let ytdata = data; // .result;
+        // let ytdata = await this.fetchUnfurl(embedurl);
         let ret = {
             ytdata:        ytdata,
             url:           ytdata.open_graph.url,
@@ -281,7 +291,18 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 
     async fetchUnfurlResource(embedurl) {
         // console.log(embedurl);
-        let ytdata = await this.fetchUnfurl(embedurl);
+        let data = await this.fetchUnfurl(embedurl);
+        let ytdata = data; // .result;
+        // console.log(`fetchUnfurlResource ${embedurl} ${util.inspect(data)}`);
+        if (!ytdata) {
+            throw new Error(`fetchUnfurlResource No fetchUnfurl data for ${embedurl} ${util.inspect(data)}`);
+        }
+        if (!ytdata.open_graph) {
+            throw new Error(`fetchUnfurlResource No Open Graph data for ${embedurl} ${util.inspect(data)}`);
+        }
+        if (!ytdata.oEmbed) {
+            throw new Error(`fetchUnfurlResource No oEmbed data for ${embedurl} ${util.inspect(data)}`);
+        }
         let ret = {
             ytdata:        ytdata,
             url:           ytdata.open_graph.url,
