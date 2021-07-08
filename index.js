@@ -414,7 +414,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         const mdata = {
             youtubeCode: code,
             embedURL: embedURL.href,
-            embedClass: _class, id,
+            embedClass: clazz, id,
             title, style, description
         };
         return akasha.partial(this.config, template, mdata);
@@ -555,7 +555,7 @@ class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
                 dirty();
                 ret += await this.array.options.config.plugin(pluginName)
                 .doEmbedYouTube(
-                        youtubeData.template, youtubeData.code,
+                        youtubeData.code, youtubeData.template,
                         youtubeData.class, youtubeData.style,
                         youtubeData.title, youtubeData.id,
                         youtubeData.autoplay,
