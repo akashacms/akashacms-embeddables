@@ -1,0 +1,12 @@
+
+<div  class="embed-responsive embed-responsive-16by9"
+
+    {% if embedClass %} class="{{ embedClass }} framed-video-player" {% endif %}
+    {% if style %} style="{{ style }}" {% endif %}
+    {% if id %} id="{{ id }}" {% endif %}
+    {% if width %} width="{{ width }}" {% endif %} >
+
+    {{ embedCode }}
+</div>
+
+{% include "embed-resource-promote-images.html.njk" %}

@@ -12,6 +12,7 @@ describe('build site', function() {
         config = new akasha.Configuration();
         config.rootURL("https://example.akashacms.com");
         config.configDir = __dirname;
+        config.setConcurrency(1);
         config.addLayoutsDir('layouts')
               // .addPartialsDir('partials')
               .addDocumentsDir('documents');

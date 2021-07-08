@@ -13,6 +13,6 @@
   "dependencies": {
     "chai": "^4.1.2",
     "mocha": "^5.2.0",
-    "@akashacms/plugins-base": "akashacms/akashacms-base"
+    "@akashacms/plugins-base": "akashacms/akashacms-base#watcher"
   }
 }

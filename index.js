@@ -79,6 +79,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         this[_plugin_config] = config;
         this[_plugin_options] = options;
         options.config = config;
+        config.addLayoutsDir(path.join(__dirname, 'layouts'));
         config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addAssetsDir(path.join(__dirname, 'assets'));
         config.addMahabhuta(module.exports.mahabhutaArray(options));
@@ -335,20 +336,24 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         // the data comes from.  So we ended up with one
         // function, fetchUnfurlResource.
 
+        // console.log(`resource `, attrs);
+
         let data;
-        if (attrs.href.indexOf('facebook.com') >= 0) {
+        if (attrs.href && attrs.href.indexOf('facebook.com') >= 0) {
             data = await this.fetchFacebookEmbed(attrs.href);
-        } else if (attrs.href.indexOf('twitter.com') >= 0) {
+        } else if (attrs.href && attrs.href.indexOf('twitter.com') >= 0) {
             // data = await this.fetchTwitterEmbed(attrs.href);
             data = await this.fetchUnfurlResource(attrs.href);
-        } else if (attrs.href.indexOf('youtube.com') >= 0) {
+        } else if (attrs.href && attrs.href.indexOf('youtube.com') >= 0) {
             // data = await this.fetchYouTubeEmbed(attrs.href);
             data = await this.fetchUnfurlResource(attrs.href);
-        } else if (attrs.href.indexOf('slideshare.com') >= 0) {
+        } else if (attrs.href && attrs.href.indexOf('slideshare.com') >= 0) {
             // data = await this.fetchSlideShareEmbed(attrs.href);
             data = await this.fetchUnfurlResource(attrs.href);
-        } else {
+        } else if (attrs.href) {
             data = await this.fetchUnfurlResource(attrs.href);
+        } else {
+            throw new Error(`${pluginName} resource no href in ${util.inspect(attrs)}`);
         }
 
         let title2use;
@@ -392,6 +397,45 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         return mdata;
     }
 
+    youtubeEmbedURL(code, autoplay) {
+        const embedURL = new URL("https://www.youtube.com/embed/");
+        embedURL.pathname = "/embed/" + code;
+        if (autoplay) embedURL.searchParams.set("autoplay", autoplay);
+        return embedURL.href;
+    }
+
+    doEmbedYouTube(code, _template, clazz, style, title, id, autoplay, description) {
+        if (!code) throw new Error("code required for doEmbedYouTube");
+
+        const template = _template ? _template : 'embed-youtube.html.njk';
+        const embedURL = new URL("https://www.youtube.com/embed/");
+        embedURL.pathname = "/embed/" + code;
+        if (autoplay) embedURL.searchParams.set("autoplay", autoplay);
+        const mdata = {
+            youtubeCode: code,
+            embedURL: embedURL.href,
+            embedClass: _class, id,
+            title, style, description
+        };
+        return akasha.partial(this.config, template, mdata);
+    }
+
+    async doEmbedResourceContent(attrs) {
+        if (!attrs || !attrs.href) {
+            console.log(`doEmbedResourceContent no href in `, attrs);
+            return "";
+        } else {
+            console.log(`doEmbedResourceContent href in `, attrs.href);
+        }
+        const mdata = await this.resource(attrs);
+
+        if (!mdata.embedCode) {
+            throw new Error(`doEmbedResourceContent FAIL to retrieve data for ${attrs.href} in ${attrs.metadata.document.path} mdata ${util.inspect(mdata)}`);
+        }
+
+        return await akasha.partial(this.config, attrs.template, mdata);
+    }
+
 };
 
 module.exports.mahabhutaArray = function(options) {
@@ -409,7 +453,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
         dirty();
         const href = $element.attr("href");
         if (!href) throw new Error("URL required for embed-resource");
-        const template = $element.attr('template') ? $element.attr('template') :  "embed-resource.html.ejs";
+        const template = $element.attr('template') ? $element.attr('template') :  "embed-resource.html.njk";
         const width  = $element.attr('width') ? $element.attr('width') : undefined;
         // var height = $element.attr('height') ? $element.attr('height') : undefined;
         const _class = $element.attr('class') ? $element.attr('class') : undefined;
@@ -419,6 +463,13 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
 
         // TODO capture the body text, making it available to the template
 
+        return this.array.options.config.plugin(pluginName)
+        .doEmbedResourceContent({
+            href, template, width, _class, style,
+            align, title, metadata
+        });
+
+        /*
         const mdata = await this.array.options.config.plugin(pluginName).resource({
             href, template, width, _class, style, align, title
         });
@@ -428,6 +479,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
         }
 
         return akasha.partial(this.array.options.config, template, mdata);
+        */
     }
 }
 
@@ -439,14 +491,24 @@ class EmbedYouTube extends mahabhuta.CustomElement {
 
         const code = $element.attr("code");
         if (!code) throw new Error("code required for embed-youtube");
-        const template = $element.attr('template') ? $element.attr('template') : "embed-youtube.html.ejs";
+        const template = $element.attr('template') ? $element.attr('template') : "embed-youtube.html.njk";
         // var height = $element.attr('height') ? $element.attr('height') : undefined;
         const _class   = $element.attr('class') ? $element.attr('class') : "embed-youtube";
         const style    = $element.attr('style') ? $element.attr('style') : undefined;
         const title    = $element.attr('title') ? $element.attr('title') : undefined;
         const id       = $element.attr('id')    ? $element.attr('id')    : undefined;
         const autoplay = $element.attr('autoplay') ? $element.attr('autoplay')    : undefined;
+        // This is because embed-youtube includes <opengraph-image>
         dirty();
+
+        const description = $element.html() ? $element.html() : (
+            $element.attr('description') ? $element.attr('description') : undefined
+        );
+        return this.array.options.config.plugin(pluginName)
+        .doEmbedYouTube(code, template, _class, style, title,
+                        id, autoplay, description)
+
+        /*
         const embedURL = new URL("https://www.youtube.com/embed/");
         embedURL.pathname = "/embed/" + code;
         if (autoplay) embedURL.searchParams.set("autoplay", autoplay);
@@ -460,28 +522,116 @@ class EmbedYouTube extends mahabhuta.CustomElement {
             title, style, description
         };
         return akasha.partial(this.array.options.config, template, mdata);
+        */
     }
 }
 
 class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
     get elementName() { return "video-players-from-videourls"; }
     async process($element, metadata, dirty) {
+        let ret = "";
+
+        if (metadata.videoUrls) {
+            for (let videoData of metadata.videoUrls) {
+                console.log(`VideoPlayersFromVideoURLS `, videoData);
+                dirty();
+                ret += await this.array.options.config.plugin(pluginName)
+                .doEmbedResourceContent({
+                    href: videoData.url,
+                    template: "embed-resource-framed.html.ejs",
+                    code: videoData.code,
+                    width: videoData.width,
+                    style: videoData.style,
+                    align: videoData.align,
+                    class: "framed-video-player",
+                    title: videoData.title,
+                    id: videoData.id
+                });
+            }
+        }
+
+        if (metadata.youtubeUrls) {
+            for (let youtubeData of metadata.youtubeUrls) {
+                dirty();
+                ret += await this.array.options.config.plugin(pluginName)
+                .doEmbedYouTube(
+                        youtubeData.template, youtubeData.code,
+                        youtubeData.class, youtubeData.style,
+                        youtubeData.title, youtubeData.id,
+                        youtubeData.autoplay,
+                        youtubeData.description);
+            }
+        }
+        return ret;
+
+        /*
         const template = $element.attr('template') 
                 ? $element.attr('template') 
-                : "video-players-from-videourls.html.ejs";
+                : "video-players-from-videourls.html.njk";
         dirty();
         return akasha.partial(this.array.options.config, template, metadata);
+        */
     }
 }
 
 class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
     get elementName() { return "video-thumbnail-from-videourls"; }
     async process($element, metadata, dirty) {
+
+        // console.log(`VideoThumbnailsFromVideoURLS ${metadata.document.path} `, metadata.videoUrls);
+
+        const template = "embed-thumbnail.html.njk";
+        const videoUrls = metadata.videoUrls;
+
+        // console.log(`doVideoThumbnailsFromVideoURLS `, videoUrls);
+
+        if (!videoUrls 
+         || !Array.isArray(videoUrls)
+         || videoUrls.length <= 0
+         || !(videoUrls[0].url)) {
+            // Return an empty string so it substitutes back into
+            // the HTML as nothingness.
+            // console.log(`doVideoThumbnailsFromVideoURLS no videoUrls[0].url`);
+            return "";
+        }/* else {
+
+            console.log(`doVideoThumbnailsFromVideoURLS got videoUrls[0].url`, videoUrls[0].url);
+        } */
+
+        const mdata = await this.array.options.config.plugin(pluginName)
+        .resource({
+            href: videoUrls[0].url,
+            template: template,
+            width: "200",
+            style: "max-width: 100%;",
+            align: "right"
+        });
+
+        // <embed-resource
+        //    template="embed-thumbnail.html.ejs"
+        //    style="max-width: 100%;"
+        //    width="200"
+        //    align="right"
+        //    href="<%= videoUrls[0].url %>"/>
+
+        console.log(`VideoThumbnailsFromVideoURLS ${videoUrls[0].url} `, mdata);
+
+        dirty();
+        return akasha.partial(this.array.options.config, "embed-thumbnail.html.ejs", {
+            imageUrl: mdata.imageUrl,
+            title: videoUrls[0].title ? videoUrls[0].title : undefined,
+            width: "200",
+            style: "max-width: 100%;",
+            align: "right"
+        });
+        /*
         const template = $element.attr('template') 
                 ? $element.attr('template') 
-                : "video-thumbnail-from-videourls.html.ejs";
+                : "video-thumbnail-from-videourls.html.njk";
         dirty();
+        console.log(`VideoThumbnailsFromVideoURLS ${metadata.document.path} `, metadata.videoUrls);
         return akasha.partial(this.array.options.config, template, metadata);
+        */
     }
 }
 
