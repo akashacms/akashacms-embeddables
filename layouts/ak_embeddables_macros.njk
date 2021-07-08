@@ -1,6 +1,6 @@
-{% macro youtubeEmbedURL(code, autoplay) %}
+{% macro youtubeEmbedURL(code, autoplay) -%}
 {{ config.plugin("@akashacms/plugins-embeddables").youtubeEmbedURL(code, autoplay) }}
-{% endmacro %}
+{%- endmacro %}
 
 {% macro doVideoThumbnailsFromVideoURLS(videoUrls) %}
 {{ config.plugin("@akashacms/plugins-embeddables").doVideoThumbnailsFromVideoURLS(videoUrls) }}

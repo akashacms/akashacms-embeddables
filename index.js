@@ -413,6 +413,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         if (autoplay) embedURL.searchParams.set("autoplay", autoplay);
         const mdata = {
             youtubeCode: code,
+            code: code,
             embedURL: embedURL.href,
             embedClass: clazz, id,
             title, style, description
