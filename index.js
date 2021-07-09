@@ -408,13 +408,11 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         if (!code) throw new Error("code required for doEmbedYouTube");
 
         const template = _template ? _template : 'embed-youtube.html.njk';
-        const embedURL = new URL("https://www.youtube.com/embed/");
-        embedURL.pathname = "/embed/" + code;
-        if (autoplay) embedURL.searchParams.set("autoplay", autoplay);
+        const embedURLhref = this.youtubeEmbedURL(code, autoplay);
         const mdata = {
             youtubeCode: code,
             code: code,
-            embedURL: embedURL.href,
+            embedURL: embedURLhref,
             embedClass: clazz, id,
             title, style, description
         };
@@ -423,11 +421,11 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 
     async doEmbedResourceContent(attrs) {
         if (!attrs || !attrs.href) {
-            console.log(`doEmbedResourceContent no href in `, attrs);
+            // console.log(`doEmbedResourceContent no href in `, attrs);
             return "";
-        } else {
+        } /* else {
             console.log(`doEmbedResourceContent href in `, attrs.href);
-        }
+        } */
         const mdata = await this.resource(attrs);
 
         if (!mdata.embedCode) {
@@ -451,10 +449,10 @@ module.exports.mahabhutaArray = function(options) {
 class EmbedResourceContent extends mahabhuta.CustomElement {
     get elementName() { return "embed-resource"; }
     async process($element, metadata, dirty) {
-        dirty();
         const href = $element.attr("href");
         if (!href) throw new Error("URL required for embed-resource");
-        const template = $element.attr('template') ? $element.attr('template') :  "embed-resource.html.njk";
+        const template = $element.attr('template')
+                        ? $element.attr('template') :  "embed-resource.html.njk";
         const width  = $element.attr('width') ? $element.attr('width') : undefined;
         // var height = $element.attr('height') ? $element.attr('height') : undefined;
         const _class = $element.attr('class') ? $element.attr('class') : undefined;
@@ -464,6 +462,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
 
         // TODO capture the body text, making it available to the template
 
+        dirty();
         return this.array.options.config.plugin(pluginName)
         .doEmbedResourceContent({
             href, template, width, _class, style,
@@ -534,7 +533,7 @@ class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
 
         if (metadata.videoUrls) {
             for (let videoData of metadata.videoUrls) {
-                console.log(`VideoPlayersFromVideoURLS `, videoData);
+                // console.log(`VideoPlayersFromVideoURLS `, videoData);
                 dirty();
                 ret += await this.array.options.config.plugin(pluginName)
                 .doEmbedResourceContent({
@@ -615,7 +614,7 @@ class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
         //    align="right"
         //    href="<%= videoUrls[0].url %>"/>
 
-        console.log(`VideoThumbnailsFromVideoURLS ${videoUrls[0].url} `, mdata);
+        // console.log(`VideoThumbnailsFromVideoURLS ${videoUrls[0].url} `, mdata);
 
         dirty();
         return akasha.partial(this.array.options.config, "embed-thumbnail.html.ejs", {
