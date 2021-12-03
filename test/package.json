@@ -11,8 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "chai": "^4.1.2",
-    "mocha": "^5.2.0",
+    "chai": "^4.3.x",
+    "mocha": "^9.1.x",
     "@akashacms/plugins-base": "akashacms/akashacms-base#watcher"
   }
 }

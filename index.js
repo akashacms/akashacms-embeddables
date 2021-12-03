@@ -21,7 +21,7 @@
 
 const path     = require('path');
 const util     = require('util');
-const fetch    = require('node-fetch');
+const fetch    = import('node-fetch');
 const akasha   = require('akasharender');
 const mahabhuta = akasha.mahabhuta;
 
@@ -220,7 +220,8 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         // For some reason oembetter has stopped working with Tweets
         // The Twitter documentation offers this.
         // See: https://developer.twitter.com/en/docs/twitter-for-websites/embedded-tweets/overview
-        let twdata = await fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
+        const _fetch = await fetch; // Load the module
+        let twdata = await _fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
         let twjson = await twdata.json();
         if (twjson.html) {
             ret.url = twjson.url;
