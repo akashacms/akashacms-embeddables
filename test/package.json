@@ -5,14 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha ./index",
-    "setup": "npm install && cd .. && npm install && npm install akashacms/akasharender --no-save",
+    "setup": "npm install && cd .. && npm install && npm install akashacms/akasharender#watcher --no-save",
     "clean": "rm -rf node_modules out"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "chai": "^4.1.2",
-    "mocha": "^5.2.0",
-    "@akashacms/plugins-base": "akashacms/akashacms-base"
+    "chai": "^4.3.x",
+    "mocha": "^9.1.x",
+    "@akashacms/plugins-base": "akashacms/akashacms-base#watcher"
   }
 }

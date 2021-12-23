@@ -19,9 +19,9 @@
     "dopublish": "npm publish --access public"
   },
   "dependencies": {
-    "commander": "^7.x",
+    "commander": "^8.3.x",
     "meta-extractor": "^2.x",
-    "node-fetch": "^2.6.x",
+    "node-fetch": "^3.1.x",
     "oembetter": "^0.1.x",
     "unfurl.js": "^5.2.x"
   }

@@ -1,0 +1,18 @@
+
+{% if embedData and embedData.thumbnail_url %}
+    <opengraph-image href="{{ embedData.thumbnail_url }}"/>
+{% endif %}
+
+{% if embedData and embedData.metadata and embedData.metadata.ogImage %}
+    <opengraph-image href="{{ embedData.metadata.ogImage }}"/>
+{% endif %}
+
+{% if embedData and embedData.metadata and embedData.metadata.twitterImage %}
+    <opengraph-image href="{{ embedData.metadata.twitterImage }}"/>
+{% endif %}
+
+{% if embedData and embedData.metadata and embedData.metadata.images %}
+    {% for img in embedData.metadata.images %}
+        <opengraph-image href="{{ img }}"/>
+    {% endfor %}
+{% endif %}

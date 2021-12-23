@@ -1,0 +1,19 @@
+{% macro youtubeEmbedURL(code, autoplay) -%}
+{{ config.plugin("@akashacms/plugins-embeddables").youtubeEmbedURL(code, autoplay) }}
+{%- endmacro %}
+
+{% macro doVideoThumbnailsFromVideoURLS(videoUrls) %}
+{{ config.plugin("@akashacms/plugins-embeddables").doVideoThumbnailsFromVideoURLS(videoUrls) }}
+{% endmacro %}
+
+{% macro doEmbedYouTube(template, code, clazz, style, title, id, autoplay, description) %}
+    {% if template %}
+        {% include template %}
+    {% else %}
+        {% include "embed-youtube.html.njk" %}
+    {% endif %}
+{% endmacro %}
+
+{% macro doEmbedResourceContent(template, href, code, width, style, align, _class, title, id) %}
+    {{ config.plugin("@akashacms/plugins-embeddables").doEmbedResourceContent({ href: href, template: template, width: width, _class: _class, style: style, align: align, title: title }) }}
+{% endmacro %}
