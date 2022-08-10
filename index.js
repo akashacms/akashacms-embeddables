@@ -21,7 +21,7 @@
 
 const path     = require('path');
 const util     = require('util');
-const fetch    = import('node-fetch');
+// const fetch    = import('node-fetch');
 const akasha   = require('akasharender');
 const mahabhuta = akasha.mahabhuta;
 
@@ -33,6 +33,8 @@ const { unfurl } = require('unfurl.js');
 
 oembetter.whitelist(oembetter.suggestedWhitelist);
 oembetter.endpoints(oembetter.suggestedEndpoints);
+
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const doExtract = (url) => {
     return new Promise((resolve, reject) => {
@@ -94,7 +96,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         //    return Promise.resolve(data);
         // }
 
-        let cache = (await akasha.cache).getCache(pluginName, { create: true });
+        let cache = (await akasha.filecache).getCollection(pluginName);
         let data = cache.find({
             type: 'fetchOembetter',
             url: embedurl
@@ -132,7 +134,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         // if (data) {
         //    return Promise.resolve(data);
         // }
-        let cache = (await akasha.cache).getCache(pluginName, { create: true });
+        let cache = (await akasha.filecache).getCollection(pluginName);
         let data = cache.find({
             type: 'fetchUnfurl',
             url: embedurl
@@ -145,7 +147,9 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                 throw new Error(`fetchUnfurl got incorrect data from cache for ${embedurl} ==> ${util.inspect(data)}`);
             }
         }
-        let result = await unfurl(embedurl);
+        let result = await unfurl(embedurl, {
+            oembed: true
+        });
         // console.log(`fetchUnfurl ${embedurl} unfurl result `, result);
         try {
             cache.insert({
@@ -220,8 +224,8 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         // For some reason oembetter has stopped working with Tweets
         // The Twitter documentation offers this.
         // See: https://developer.twitter.com/en/docs/twitter-for-websites/embedded-tweets/overview
-        const _fetch = await fetch; // Load the module
-        let twdata = await _fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
+        // const _fetch = await fetch; // Load the module
+        let twdata = await fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
         let twjson = await twdata.json();
         if (twjson.html) {
             ret.url = twjson.url;
@@ -303,7 +307,12 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
             throw new Error(`fetchUnfurlResource No Open Graph data for ${embedurl} ${util.inspect(data)}`);
         }
         if (!ytdata.oEmbed) {
-            throw new Error(`fetchUnfurlResource No oEmbed data for ${embedurl} ${util.inspect(data)}`);
+            if (embedurl.indexOf('twitter.com') >= 0) {
+                ytdata.oEmbed = await this.fetchTwitterEmbed(embedurl);
+            }
+            if (!ytdata.oEmbed) {
+                throw new Error(`fetchUnfurlResource No oEmbed data for ${embedurl} ${util.inspect(data)}`);
+            }
         }
         let ret = {
             ytdata:        ytdata,
