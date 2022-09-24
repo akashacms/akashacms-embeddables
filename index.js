@@ -70,7 +70,6 @@ const pluginName = "@akashacms/plugins-embeddables";
 var leveldb;
 
 const _plugin_config = Symbol('config');
-const _plugin_options = Symbol('options');
 
 module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 	constructor() {
@@ -79,7 +78,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 
     configure(config, options) {
         this[_plugin_config] = config;
-        this[_plugin_options] = options;
+        this.options = options;
         options.config = config;
         config.addLayoutsDir(path.join(__dirname, 'layouts'));
         config.addPartialsDir(path.join(__dirname, 'partials'));
@@ -88,7 +87,6 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
     }
 
     get config() { return this[_plugin_config]; }
-    get options() { return this[_plugin_options]; }
 
     async fetchOembetter(embedurl) {
         // var data = akasha.cache.retrieve(pluginName+':fetchOembetter', embedurl);
@@ -96,7 +94,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         //    return Promise.resolve(data);
         // }
 
-        let cache = (await akasha.filecache).getCollection(pluginName);
+        let cache = this.akasha.filecache.getCollection(pluginName);
         let data = cache.find({
             type: 'fetchOembetter',
             url: embedurl
@@ -134,7 +132,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         // if (data) {
         //    return Promise.resolve(data);
         // }
-        let cache = (await akasha.filecache).getCollection(pluginName);
+        let cache = this.akasha.filecache.getCollection(pluginName);
         let data = cache.find({
             type: 'fetchUnfurl',
             url: embedurl
@@ -147,6 +145,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                 throw new Error(`fetchUnfurl got incorrect data from cache for ${embedurl} ==> ${util.inspect(data)}`);
             }
         }
+        // console.log(`fetchUnfurl ${embedurl}`);
         let result = await unfurl(embedurl, {
             oembed: true
         });
@@ -442,7 +441,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
             throw new Error(`doEmbedResourceContent FAIL to retrieve data for ${attrs.href} in ${attrs.metadata.document.path} mdata ${util.inspect(mdata)}`);
         }
 
-        return await akasha.partial(this.config, attrs.template, mdata);
+        return await this.akasha.partial(this.config, attrs.template, mdata);
     }
 
 };
@@ -627,7 +626,7 @@ class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
         // console.log(`VideoThumbnailsFromVideoURLS ${videoUrls[0].url} `, mdata);
 
         dirty();
-        return akasha.partial(this.array.options.config, "embed-thumbnail.html.ejs", {
+        return this.array.options.config.akasha.partial(this.array.options.config, "embed-thumbnail.html.ejs", {
             imageUrl: mdata.imageUrl,
             title: videoUrls[0].title ? videoUrls[0].title : undefined,
             width: "200",
