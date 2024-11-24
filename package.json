@@ -28,16 +28,15 @@
   },
   "version": "0.8.0",
   "engines": {
-    "node": ">=12.4"
+    "node": ">=20.x"
   },
   "scripts": {
     "dopublish": "npm publish --access public"
   },
   "dependencies": {
-    "commander": "^8.3.x",
-    "meta-extractor": "^2.x",
-    "node-fetch": "^3.1.x",
-    "oembetter": "^0.1.x",
-    "unfurl.js": "^5.2.x"
+    "meta-extractor": "^2.1.x",
+    "node-fetch": "^3.3.x",
+    "oembetter": "^1.1.x",
+    "unfurl.js": "^6.4.x"
   }
 }

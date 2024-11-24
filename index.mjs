@@ -17,24 +17,35 @@
  *  limitations under the License.
  */
 
-'use strict';
-
-const path     = require('path');
-const util     = require('util');
-// const fetch    = import('node-fetch');
-const akasha   = require('akasharender');
+import url from 'node:url';
+import path from 'node:path';
+import util from 'node:util';
+import akasha from 'akasharender';
 const mahabhuta = akasha.mahabhuta;
+import { newKeyv } from 'akasharender/dist/sqdb.js';
 
-const extract = require('meta-extractor');
-const oembetter = require('oembetter')();
-const { unfurl } = require('unfurl.js');
+import extract from 'meta-extractor';
+import OEMBETTER from 'oembetter';
+const oembetter = OEMBETTER();
+import { unfurl } from 'unfurl.js';
+import fetch from 'node-fetch'
+
+const __dirname = import.meta.dirname;
+
+const cache = newKeyv('embeddables');
+
+function mkCacheKey(type, url) {
+    if (typeof type !== 'string' || typeof url !== 'string') {
+        throw new Error(`Invalid cache key must be string ${util.inspect(type)} ${util.inspect(url)}`);
+    }
+    return `${type} ${url}`;
+}
 
 // oembetter.whitelist([ 'youtube.com', 'facebook.com', 'twitter.com', 'vimeo.com', 'wufoo.com' ]);
 
-oembetter.whitelist(oembetter.suggestedWhitelist);
-oembetter.endpoints(oembetter.suggestedEndpoints);
+// oembetter.whitelist(oembetter.suggestedWhitelist);
+// oembetter.endpoints(oembetter.suggestedEndpoints);
 
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const doExtract = (url) => {
     return new Promise((resolve, reject) => {
@@ -69,24 +80,25 @@ const pluginName = "@akashacms/plugins-embeddables";
 
 var leveldb;
 
-const _plugin_config = Symbol('config');
+export class EmbeddablesPlugin extends akasha.Plugin {
 
-module.exports = class EmbeddablesPlugin extends akasha.Plugin {
+    #config;
+
 	constructor() {
 		super(pluginName);
 	}
 
     configure(config, options) {
-        this[_plugin_config] = config;
+        this.#config = config;
         this.options = options;
         options.config = config;
         config.addLayoutsDir(path.join(__dirname, 'layouts'));
         config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addAssetsDir(path.join(__dirname, 'assets'));
-        config.addMahabhuta(module.exports.mahabhutaArray(options));
+        config.addMahabhuta(mahabhutaArray(options));
     }
 
-    get config() { return this[_plugin_config]; }
+    get config() { return this.#config; }
 
     async fetchOembetter(embedurl) {
         // var data = akasha.cache.retrieve(pluginName+':fetchOembetter', embedurl);
@@ -94,26 +106,32 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         //    return Promise.resolve(data);
         // }
 
-        let cache = this.akasha.filecache.getCollection(pluginName);
-        let data = cache.find({
-            type: 'fetchOembetter',
-            url: embedurl
-        });
+        let data = await cache.get(
+            mkCacheKey(
+                'fetchOembetter',
+                embedurl
+            )
+        );
         if (data) {
             return data;
         }
         let ret = await new Promise((resolve, reject) => {
-            oembetter.fetch(embedurl, (err, result) => {
+            oembetter.fetch(embedurl, async (err, result) => {
                 if (err) {
                     console.error(`${pluginName} fetchOembetter FAIL on ${embedurl} because ${err}`);
                     reject(err);
                 } else {
                     try {
-                        cache.insert({
-                            type: 'fetchOembetter',
-                            url: embedurl,
-                            result: result
-                        });
+                        await cache.set(
+                            mkCacheKey(
+                                'fetchOembetter',
+                                embedurl
+                            ), {
+                                type: 'fetchOembetter',
+                                url: embedurl,
+                                result: result
+                            }
+                        );
                         // akasha.cache.persist(pluginName+':fetchOembetter', embedurl, result);
                         // console.log(`${pluginName} fetchOembetter successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
                     } catch (err2) {
@@ -132,14 +150,16 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         // if (data) {
         //    return Promise.resolve(data);
         // }
-        let cache = this.akasha.filecache.getCollection(pluginName);
-        let data = cache.find({
-            type: 'fetchUnfurl',
-            url: embedurl
-        });
-        // console.log(`fetchUnfurl ${embedurl} len=${data.length}`, data);
-        if (data.length >= 1) {
-            let ret = data[0];
+
+        let data = await cache.get(
+            mkCacheKey(
+                'fetchUnfurl',
+                embedurl
+            )
+        );
+        // console.log(`fetchUnfurl ${embedurl} len=${data?.length}`, data);
+        if (data) {
+            let ret = data;
             if (ret.result) return ret.result;
             else {
                 throw new Error(`fetchUnfurl got incorrect data from cache for ${embedurl} ==> ${util.inspect(data)}`);
@@ -149,13 +169,18 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         let result = await unfurl(embedurl, {
             oembed: true
         });
-        // console.log(`fetchUnfurl ${embedurl} unfurl result `, result);
+        // console.log(`fetchUnfurl ${embedurl} SET unfurl result `, result);
         try {
-            cache.insert({
-                type: 'fetchUnfurl',
-                url: embedurl,
-                result: result
-            });
+            await cache.set(
+                mkCacheKey(
+                    'fetchUnfurl',
+                    embedurl
+                ), {
+                    type: 'fetchUnfurl',
+                    url: embedurl,
+                    result: result
+                }
+            );
             // akasha.cache.persist(pluginName+':fetchUnfurl', embedurl, result);
             // console.log(`${pluginName} fetchUnfurl successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
         } catch (err2) {
@@ -310,10 +335,11 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
                 ytdata.oEmbed = await this.fetchTwitterEmbed(embedurl);
             }
             if (!ytdata.oEmbed) {
-                throw new Error(`fetchUnfurlResource No oEmbed data for ${embedurl} ${util.inspect(data)}`);
+                console.warn(`fetchUnfurlResource No oEmbed data for ${embedurl} ${util.inspect(data)}`);
             }
         }
-        let ret = {
+        let ret = ytdata.oEmbed 
+        ? {
             ytdata:        ytdata,
             url:           ytdata.open_graph.url,
             author_name:   ytdata.oEmbed.author_name,
@@ -324,6 +350,13 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
             provider_url:  ytdata.oEmbed.provider_url,
             description:   ytdata.open_graph.description,
             html:          ytdata.oEmbed.html
+        }
+        : {
+            ytdata:        ytdata,
+            url:           ytdata.open_graph.url,
+            author_name:   ytdata.twitter_card.site,
+            author_url:    `https://www.youtube.com/${ytdata.twitter_card.site}`,
+            html:          ytdata.twitter_card.players[0]
         };
         if (ytdata.open_graph.images
          && ytdata.open_graph.images.length >= 1
@@ -446,7 +479,7 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 
 };
 
-module.exports.mahabhutaArray = function(options) {
+export function mahabhutaArray(options) {
     let ret = new mahabhuta.MahafuncArray(pluginName, options);
     ret.addMahafunc(new EmbedResourceContent());
     ret.addMahafunc(new EmbedYouTube());

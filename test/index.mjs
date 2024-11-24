@@ -1,29 +1,14 @@
 
-const akasha   = require('akasharender');
-const plugin = require('../index');
-const { assert } = require('chai');
+import akasha from 'akasharender';
+import { assert } from 'chai';
 
-let config;
+const __dirname = import.meta.dirname;
+import { default as config } from './config.mjs';
 
 describe('build site', function() {
 
     it('should construct configuration', async function() {
         this.timeout(75000);
-        config = new akasha.Configuration();
-        config.rootURL("https://example.akashacms.com");
-        config.configDir = __dirname;
-        config.setConcurrency(1);
-        config.addLayoutsDir('layouts')
-              // .addPartialsDir('partials')
-              .addDocumentsDir('documents');
-        config.use(plugin)
-            .use(require('@akashacms/plugins-base'));
-        config.setMahabhutaConfig({
-            recognizeSelfClosing: true,
-            recognizeCDATA: true,
-            decodeEntities: true
-        });
-        config.prepare();
     });
 
     it('should run setup', async function() {
@@ -39,6 +24,8 @@ describe('build site', function() {
     it('should build site', async function() {
         this.timeout(25000);
         let failed = false;
+        // console.log(config.layoutDirs);
+        // console.log(config.plugins);
         let results = await akasha.render(config);
         for (let result of results) {
             if (result.error) {
