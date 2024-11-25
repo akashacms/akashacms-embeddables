@@ -266,6 +266,26 @@ export class EmbeddablesPlugin extends akasha.Plugin {
         return ret;
     }
 
+    async fetchVimeoEmbed(embedurl) {
+        let ret = {};
+        // See: https://developer.vimeo.com/api/oembed/videos
+        let vimdata = await fetch(`https://vimeo.com/api/oembed.json?url=${embedurl}`);
+        // console.log(`fetchVimeoEmbed ${embedurl}`, vimdata);
+        let vimjson = await vimdata.json();
+        // console.log(`fetchVimeoEmbed vimjson ${embedurl}`, vimjson);
+        if (vimjson.html) {
+            ret.url = path.join(vimjson.provider_url,  vimjson.uri);
+            ret.author_name = vimjson.author_name;
+            ret.author_url = vimjson.author_url;
+            ret.width = vimjson.width;
+            ret.height = vimjson.height;
+            ret.provider_name = vimjson.provider_name;
+            ret.provider_url = vimjson.provider_url;
+            ret.html = vimjson.html;
+        }
+        return ret;
+    }
+
     async fetchYouTubeEmbed(embedurl) {
         let data = await this.fetchUnfurl(embedurl);
         let ytdata = data; // .result;
@@ -392,6 +412,8 @@ export class EmbeddablesPlugin extends akasha.Plugin {
         } else if (attrs.href && attrs.href.indexOf('slideshare.com') >= 0) {
             // data = await this.fetchSlideShareEmbed(attrs.href);
             data = await this.fetchUnfurlResource(attrs.href);
+        } else if (attrs.href && attrs.href.indexOf('vimeo.com') >= 0) {
+            data = await this.fetchVimeoEmbed(attrs.href);
         } else if (attrs.href) {
             data = await this.fetchUnfurlResource(attrs.href);
         } else {
@@ -474,7 +496,9 @@ export class EmbeddablesPlugin extends akasha.Plugin {
             throw new Error(`doEmbedResourceContent FAIL to retrieve data for ${attrs.href} in ${attrs.metadata.document.path} mdata ${util.inspect(mdata)}`);
         }
 
-        return await this.akasha.partial(this.config, attrs.template, mdata);
+        const ret = await this.akasha.partial(this.config, attrs.template, mdata);
+        // console.log(`doEmbedResourceContent ${util.inspect(attrs)} ${util.inspect(mdata)}}`, ret);
+        return ret;
     }
 
 };
