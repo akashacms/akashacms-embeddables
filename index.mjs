@@ -165,10 +165,17 @@ export class EmbeddablesPlugin extends akasha.Plugin {
                 throw new Error(`fetchUnfurl got incorrect data from cache for ${embedurl} ==> ${util.inspect(data)}`);
             }
         }
+
         // console.log(`fetchUnfurl ${embedurl}`);
-        let result = await unfurl(embedurl, {
-            oembed: true
-        });
+        let result;
+        try {
+            result = await unfurl(embedurl, {
+                oembed: true
+            });
+        } catch (err) {
+            throw new Error(`fetUnfurl ${embedurl} unfurl caught error ${err.message}`);
+        }
+
         // console.log(`fetchUnfurl ${embedurl} SET unfurl result `, result);
         try {
             await cache.set(
@@ -243,6 +250,44 @@ export class EmbeddablesPlugin extends akasha.Plugin {
     async fetchTwitterEmbed(embedurl) {
 
         let ret = {};
+
+
+        let data;
+        try {
+            data = await this.fetchUnfurl(embedurl);
+            if (data && data.open_graph) {
+                return {
+                    url: embedurl,
+                    html: `
+                    <figure>
+                        <a href="${embedurl}">
+                        <img src="${data.open_graph.images[0].url}"/>
+                        </a>
+                        <caption>
+                        ${data.open_graph.title}: 
+                        ${data.open_graph.description}
+                        </caption>
+                    </figure>
+                    `
+                }
+            }
+        } catch (err) {}
+
+        // The above was found through trial-error to work, when
+        // the following was found to throw exceptions.  The
+        // URL points to official Twitter documentation saying
+        // to do exactly as shown here, but this fails.
+        //
+        // The above does not return Twitter data, only OpenGraph.
+        // The above results in output that does not meet
+        // Twitter's standards.  It is also badly formatted.
+        // At the very least this should be run through
+        // an overridable template.
+        //
+        // It's actually preferable for a website to instead
+        // of embedding tweets, to make a screen capture of the
+        // tweet, use that image in the website, wrapping it
+        // with a link to the source.
 
         // It's a Twitter URL, and no HTML code
         // For some reason oembetter has stopped working with Tweets
