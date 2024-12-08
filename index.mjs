@@ -22,7 +22,7 @@ import path from 'node:path';
 import util from 'node:util';
 import akasha from 'akasharender';
 const mahabhuta = akasha.mahabhuta;
-import { newKeyv } from 'akasharender/dist/sqdb.js';
+import { newSQ3DataStore } from 'akasharender/dist/sqdb.js';
 
 import extract from 'meta-extractor';
 import OEMBETTER from 'oembetter';
@@ -31,8 +31,6 @@ import { unfurl } from 'unfurl.js';
 import fetch from 'node-fetch'
 
 const __dirname = import.meta.dirname;
-
-const cache = newKeyv('embeddables');
 
 function mkCacheKey(type, url) {
     if (typeof type !== 'string' || typeof url !== 'string') {
@@ -78,7 +76,7 @@ oembetter.addFallback(async function(url, options, callback) {
 
 const pluginName = "@akashacms/plugins-embeddables";
 
-var leveldb;
+var sq3db;
 
 export class EmbeddablesPlugin extends akasha.Plugin {
 
@@ -96,17 +94,15 @@ export class EmbeddablesPlugin extends akasha.Plugin {
         config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addAssetsDir(path.join(__dirname, 'assets'));
         config.addMahabhuta(mahabhutaArray(options));
+
+        // console.log(`Embeddables configure newSQ3DataStore`);
+        sq3db = newSQ3DataStore('embeddables');
     }
 
     get config() { return this.#config; }
 
     async fetchOembetter(embedurl) {
-        // var data = akasha.cache.retrieve(pluginName+':fetchOembetter', embedurl);
-        // if (data) {
-        //    return Promise.resolve(data);
-        // }
-
-        let data = await cache.get(
+        let data = await sq3db.get(
             mkCacheKey(
                 'fetchOembetter',
                 embedurl
@@ -122,7 +118,7 @@ export class EmbeddablesPlugin extends akasha.Plugin {
                     reject(err);
                 } else {
                     try {
-                        await cache.set(
+                        await sq3db.put(
                             mkCacheKey(
                                 'fetchOembetter',
                                 embedurl
@@ -132,10 +128,8 @@ export class EmbeddablesPlugin extends akasha.Plugin {
                                 result: result
                             }
                         );
-                        // akasha.cache.persist(pluginName+':fetchOembetter', embedurl, result);
-                        // console.log(`${pluginName} fetchOembetter successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
                     } catch (err2) {
-                        console.error(`${pluginName} fetchOembetter akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
+                        console.error(`${pluginName} fetchOembetter akasha.cache.persist FAIL on ${embedurl} because ${err} with ${util.inspect(result)}`);
                     }
                     resolve(result);
                 }
@@ -146,17 +140,13 @@ export class EmbeddablesPlugin extends akasha.Plugin {
 
     async fetchUnfurl(embedurl) {
         // console.log(embedurl);
-        // var data = akasha.cache.retrieve(pluginName+':fetchUnfurl', embedurl);
-        // if (data) {
-        //    return Promise.resolve(data);
-        // }
-
-        let data = await cache.get(
+        let data = await sq3db.get(
             mkCacheKey(
                 'fetchUnfurl',
                 embedurl
             )
         );
+
         // console.log(`fetchUnfurl ${embedurl} len=${data?.length}`, data);
         if (data) {
             let ret = data;
@@ -178,7 +168,7 @@ export class EmbeddablesPlugin extends akasha.Plugin {
 
         // console.log(`fetchUnfurl ${embedurl} SET unfurl result `, result);
         try {
-            await cache.set(
+            await sq3db.put(
                 mkCacheKey(
                     'fetchUnfurl',
                     embedurl
@@ -188,10 +178,9 @@ export class EmbeddablesPlugin extends akasha.Plugin {
                     result: result
                 }
             );
-            // akasha.cache.persist(pluginName+':fetchUnfurl', embedurl, result);
-            // console.log(`${pluginName} fetchUnfurl successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
+
         } catch (err2) {
-            console.error(`${pluginName} fetchUnfurl akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
+            console.error(`${pluginName} fetchUnfurl akasha.cache.persist FAIL on ${embedurl} because ${err2} with ${util.inspect(result)}`);
         }
         return result;
     }
