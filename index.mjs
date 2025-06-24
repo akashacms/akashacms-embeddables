@@ -17,10 +17,14 @@
  *  limitations under the License.
  */
 
-import url from 'node:url';
 import path from 'node:path';
 import util from 'node:util';
-import akasha from 'akasharender';
+import akasha, {
+    Configuration,
+    CustomElement,
+    Munger,
+    PageProcessor
+} from 'akasharender';
 const mahabhuta = akasha.mahabhuta;
 import { newSQ3DataStore } from 'akasharender/dist/sqdb.js';
 
@@ -93,7 +97,7 @@ export class EmbeddablesPlugin extends akasha.Plugin {
         config.addLayoutsDir(path.join(__dirname, 'layouts'));
         config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addAssetsDir(path.join(__dirname, 'assets'));
-        config.addMahabhuta(mahabhutaArray(options));
+        config.addMahabhuta(mahabhutaArray(options, config, this.akasha, this));
 
         // console.log(`Embeddables configure newSQ3DataStore`);
         sq3db = newSQ3DataStore('embeddables');
@@ -537,16 +541,21 @@ export class EmbeddablesPlugin extends akasha.Plugin {
 
 };
 
-export function mahabhutaArray(options) {
+export function mahabhutaArray(
+            options,
+            config, // ?: Configuration,
+            akasha, // ?: any,
+            plugin  // ?: Plugin
+) {
     let ret = new mahabhuta.MahafuncArray(pluginName, options);
-    ret.addMahafunc(new EmbedResourceContent());
-    ret.addMahafunc(new EmbedYouTube());
-    ret.addMahafunc(new VideoPlayersFromVideoURLS());
-    ret.addMahafunc(new VideoThumbnailsFromVideoURLS());
+    ret.addMahafunc(new EmbedResourceContent(config, akasha, plugin));
+    ret.addMahafunc(new EmbedYouTube(config, akasha, plugin));
+    ret.addMahafunc(new VideoPlayersFromVideoURLS(config, akasha, plugin));
+    ret.addMahafunc(new VideoThumbnailsFromVideoURLS(config, akasha, plugin));
     return ret;
 };
 
-class EmbedResourceContent extends mahabhuta.CustomElement {
+class EmbedResourceContent extends CustomElement {
     get elementName() { return "embed-resource"; }
     async process($element, metadata, dirty) {
         const href = $element.attr("href");
@@ -563,7 +572,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
         // TODO capture the body text, making it available to the template
 
         dirty();
-        return this.array.options.config.plugin(pluginName)
+        return this.config.plugin(pluginName)
         .doEmbedResourceContent({
             href, template, width, _class, style,
             align, title, metadata
@@ -583,7 +592,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
     }
 }
 
-class EmbedYouTube extends mahabhuta.CustomElement {
+class EmbedYouTube extends CustomElement {
     get elementName() { return "embed-youtube"; }
     async process($element, metadata, dirty) {
 
@@ -604,7 +613,7 @@ class EmbedYouTube extends mahabhuta.CustomElement {
         const description = $element.html() ? $element.html() : (
             $element.attr('description') ? $element.attr('description') : undefined
         );
-        return this.array.options.config.plugin(pluginName)
+        return this.config.plugin(pluginName)
         .doEmbedYouTube(code, template, _class, style, title,
                         id, autoplay, description)
 
@@ -626,7 +635,7 @@ class EmbedYouTube extends mahabhuta.CustomElement {
     }
 }
 
-class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
+class VideoPlayersFromVideoURLS extends CustomElement {
     get elementName() { return "video-players-from-videourls"; }
     async process($element, metadata, dirty) {
         let ret = "";
@@ -635,7 +644,7 @@ class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
             for (let videoData of metadata.videoUrls) {
                 // console.log(`VideoPlayersFromVideoURLS `, videoData);
                 dirty();
-                ret += await this.array.options.config.plugin(pluginName)
+                ret += await this.config.plugin(pluginName)
                 .doEmbedResourceContent({
                     href: videoData.url,
                     template: "embed-resource-framed.html.ejs",
@@ -653,7 +662,7 @@ class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
         if (metadata.youtubeUrls) {
             for (let youtubeData of metadata.youtubeUrls) {
                 dirty();
-                ret += await this.array.options.config.plugin(pluginName)
+                ret += await this.config.plugin(pluginName)
                 .doEmbedYouTube(
                         youtubeData.code, youtubeData.template,
                         youtubeData.class, youtubeData.style,
@@ -674,7 +683,7 @@ class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
     }
 }
 
-class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
+class VideoThumbnailsFromVideoURLS extends CustomElement {
     get elementName() { return "video-thumbnail-from-videourls"; }
     async process($element, metadata, dirty) {
 
@@ -698,7 +707,7 @@ class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
             console.log(`doVideoThumbnailsFromVideoURLS got videoUrls[0].url`, videoUrls[0].url);
         } */
 
-        const mdata = await this.array.options.config.plugin(pluginName)
+        const mdata = await this.config.plugin(pluginName)
         .resource({
             href: videoUrls[0].url,
             template: template,
@@ -717,7 +726,7 @@ class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
         // console.log(`VideoThumbnailsFromVideoURLS ${videoUrls[0].url} `, mdata);
 
         dirty();
-        return this.array.options.config.akasha.partial(this.array.options.config, "embed-thumbnail.html.ejs", {
+        return this.config.akasha.partial(this.config, "embed-thumbnail.html.ejs", {
             imageUrl: mdata.imageUrl,
             title: videoUrls[0].title ? videoUrls[0].title : undefined,
             width: "200",
