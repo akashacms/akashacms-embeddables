@@ -4,11 +4,11 @@
 // via package.json.  To run this script you must
 // therefore run:  npm install ...modules... --no-save
 
-const program   = require('commander');
-const Plugin    = require('../index.js');
+import { program } from 'commander';
+import { EmbeddablesPlugin } from '../index.mjs';
 // const { extract } = require('oembed-parser');
-const { unfurl } = require('unfurl.js');
-const fetch    = require('node-fetch');
+import { unfurl } from 'unfurl.js';
+import fetch from 'node-fetch';
 
 process.title = 'embeddables';
 program.version('0.7.2');
@@ -18,7 +18,7 @@ program
     .description('Fetch embed codes for the URL')
     .action(async (URL) => {
         try {
-            let plugin = new Plugin("embeddables");
+            let plugin = new EmbeddablesPlugin();
             let embeds = await plugin.fetchEmbedData(URL);
             console.log(embeds);
         } catch (e) {
@@ -32,7 +32,7 @@ program
     .description('Fetch embed codes for the URL')
     .action(async (URL) => {
         try {
-            let plugin = new Plugin("embeddables");
+            let plugin = new EmbeddablesPlugin();
             let embeds = await plugin.resource({ 
                 href: URL
             });
@@ -48,7 +48,7 @@ program
     .description('Fetch Facebook embed codes for the URL')
     .action(async (URL) => {
         try {
-            let plugin = new Plugin("embeddables");
+            let plugin = new EmbeddablesPlugin();
             let embeds = await plugin.fetchFacebookEmbed(URL);
             console.log(embeds);
         } catch (e) {
@@ -78,9 +78,10 @@ program
     .action(async (URL) => {
         try {
             let embeds = await unfurl(URL);
-            console.log(embeds);
-            console.log(embeds.open_graph);
-            console.log(embeds.oEmbed);
+            console.log(`embeds`, embeds);
+            console.log(`open graph`, embeds.open_graph);
+            console.log(`oEmbed`, embeds.oEmbed);
+            console.log(`twitter card`, embeds.twitter_card);
         } catch (e) {
             console.error(`unfurl command ERRORED ${e.stack}`);
         }

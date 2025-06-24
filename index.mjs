@@ -17,22 +17,37 @@
  *  limitations under the License.
  */
 
-'use strict';
-
-const path     = require('path');
-const util     = require('util');
-const fetch    = import('node-fetch');
-const akasha   = require('akasharender');
+import path from 'node:path';
+import util from 'node:util';
+import akasha, {
+    Configuration,
+    CustomElement,
+    Munger,
+    PageProcessor
+} from 'akasharender';
 const mahabhuta = akasha.mahabhuta;
+import { newSQ3DataStore } from 'akasharender/dist/sqdb.js';
 
-const extract = require('meta-extractor');
-const oembetter = require('oembetter')();
-const { unfurl } = require('unfurl.js');
+import extract from 'meta-extractor';
+import OEMBETTER from 'oembetter';
+const oembetter = OEMBETTER();
+import { unfurl } from 'unfurl.js';
+import fetch from 'node-fetch'
+
+const __dirname = import.meta.dirname;
+
+function mkCacheKey(type, url) {
+    if (typeof type !== 'string' || typeof url !== 'string') {
+        throw new Error(`Invalid cache key must be string ${util.inspect(type)} ${util.inspect(url)}`);
+    }
+    return `${type} ${url}`;
+}
 
 // oembetter.whitelist([ 'youtube.com', 'facebook.com', 'twitter.com', 'vimeo.com', 'wufoo.com' ]);
 
-oembetter.whitelist(oembetter.suggestedWhitelist);
-oembetter.endpoints(oembetter.suggestedEndpoints);
+// oembetter.whitelist(oembetter.suggestedWhitelist);
+// oembetter.endpoints(oembetter.suggestedEndpoints);
+
 
 const doExtract = (url) => {
     return new Promise((resolve, reject) => {
@@ -65,59 +80,60 @@ oembetter.addFallback(async function(url, options, callback) {
 
 const pluginName = "@akashacms/plugins-embeddables";
 
-var leveldb;
+var sq3db;
 
-const _plugin_config = Symbol('config');
-const _plugin_options = Symbol('options');
+export class EmbeddablesPlugin extends akasha.Plugin {
 
-module.exports = class EmbeddablesPlugin extends akasha.Plugin {
+    #config;
+
 	constructor() {
 		super(pluginName);
 	}
 
     configure(config, options) {
-        this[_plugin_config] = config;
-        this[_plugin_options] = options;
+        this.#config = config;
+        this.options = options;
         options.config = config;
         config.addLayoutsDir(path.join(__dirname, 'layouts'));
         config.addPartialsDir(path.join(__dirname, 'partials'));
         config.addAssetsDir(path.join(__dirname, 'assets'));
-        config.addMahabhuta(module.exports.mahabhutaArray(options));
+        config.addMahabhuta(mahabhutaArray(options, config, this.akasha, this));
+
+        // console.log(`Embeddables configure newSQ3DataStore`);
+        sq3db = newSQ3DataStore('embeddables');
     }
 
-    get config() { return this[_plugin_config]; }
-    get options() { return this[_plugin_options]; }
+    get config() { return this.#config; }
 
     async fetchOembetter(embedurl) {
-        // var data = akasha.cache.retrieve(pluginName+':fetchOembetter', embedurl);
-        // if (data) {
-        //    return Promise.resolve(data);
-        // }
-
-        let cache = (await akasha.cache).getCache(pluginName, { create: true });
-        let data = cache.find({
-            type: 'fetchOembetter',
-            url: embedurl
-        });
+        let data = await sq3db.get(
+            mkCacheKey(
+                'fetchOembetter',
+                embedurl
+            )
+        );
         if (data) {
             return data;
         }
         let ret = await new Promise((resolve, reject) => {
-            oembetter.fetch(embedurl, (err, result) => {
+            oembetter.fetch(embedurl, async (err, result) => {
                 if (err) {
                     console.error(`${pluginName} fetchOembetter FAIL on ${embedurl} because ${err}`);
                     reject(err);
                 } else {
                     try {
-                        cache.insert({
-                            type: 'fetchOembetter',
-                            url: embedurl,
-                            result: result
-                        });
-                        // akasha.cache.persist(pluginName+':fetchOembetter', embedurl, result);
-                        // console.log(`${pluginName} fetchOembetter successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
+                        await sq3db.put(
+                            mkCacheKey(
+                                'fetchOembetter',
+                                embedurl
+                            ), {
+                                type: 'fetchOembetter',
+                                url: embedurl,
+                                result: result
+                            }
+                        );
                     } catch (err2) {
-                        console.error(`${pluginName} fetchOembetter akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
+                        console.error(`${pluginName} fetchOembetter akasha.cache.persist FAIL on ${embedurl} because ${err} with ${util.inspect(result)}`);
                     }
                     resolve(result);
                 }
@@ -128,35 +144,47 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 
     async fetchUnfurl(embedurl) {
         // console.log(embedurl);
-        // var data = akasha.cache.retrieve(pluginName+':fetchUnfurl', embedurl);
-        // if (data) {
-        //    return Promise.resolve(data);
-        // }
-        let cache = (await akasha.cache).getCache(pluginName, { create: true });
-        let data = cache.find({
-            type: 'fetchUnfurl',
-            url: embedurl
-        });
-        // console.log(`fetchUnfurl ${embedurl} len=${data.length}`, data);
-        if (data.length >= 1) {
-            let ret = data[0];
+        let data = await sq3db.get(
+            mkCacheKey(
+                'fetchUnfurl',
+                embedurl
+            )
+        );
+
+        // console.log(`fetchUnfurl ${embedurl} len=${data?.length}`, data);
+        if (data) {
+            let ret = data;
             if (ret.result) return ret.result;
             else {
                 throw new Error(`fetchUnfurl got incorrect data from cache for ${embedurl} ==> ${util.inspect(data)}`);
             }
         }
-        let result = await unfurl(embedurl);
-        // console.log(`fetchUnfurl ${embedurl} unfurl result `, result);
+
+        // console.log(`fetchUnfurl ${embedurl}`);
+        let result;
         try {
-            cache.insert({
-                type: 'fetchUnfurl',
-                url: embedurl,
-                result: result
+            result = await unfurl(embedurl, {
+                oembed: true
             });
-            // akasha.cache.persist(pluginName+':fetchUnfurl', embedurl, result);
-            // console.log(`${pluginName} fetchUnfurl successfully persisted ${embedurl} ==> ${util.inspect(result)}`);
+        } catch (err) {
+            throw new Error(`fetUnfurl ${embedurl} unfurl caught error ${err.message}`);
+        }
+
+        // console.log(`fetchUnfurl ${embedurl} SET unfurl result `, result);
+        try {
+            await sq3db.put(
+                mkCacheKey(
+                    'fetchUnfurl',
+                    embedurl
+                ), {
+                    type: 'fetchUnfurl',
+                    url: embedurl,
+                    result: result
+                }
+            );
+
         } catch (err2) {
-            console.error(`${pluginName} fetchUnfurl akasha.cache.persist FAIL on ${embedurl} because ${err} with ${result}`);
+            console.error(`${pluginName} fetchUnfurl akasha.cache.persist FAIL on ${embedurl} because ${err2} with ${util.inspect(result)}`);
         }
         return result;
     }
@@ -216,12 +244,50 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
 
         let ret = {};
 
+
+        let data;
+        try {
+            data = await this.fetchUnfurl(embedurl);
+            if (data && data.open_graph) {
+                return {
+                    url: embedurl,
+                    html: `
+                    <figure>
+                        <a href="${embedurl}">
+                        <img src="${data.open_graph.images[0].url}"/>
+                        </a>
+                        <caption>
+                        ${data.open_graph.title}: 
+                        ${data.open_graph.description}
+                        </caption>
+                    </figure>
+                    `
+                }
+            }
+        } catch (err) {}
+
+        // The above was found through trial-error to work, when
+        // the following was found to throw exceptions.  The
+        // URL points to official Twitter documentation saying
+        // to do exactly as shown here, but this fails.
+        //
+        // The above does not return Twitter data, only OpenGraph.
+        // The above results in output that does not meet
+        // Twitter's standards.  It is also badly formatted.
+        // At the very least this should be run through
+        // an overridable template.
+        //
+        // It's actually preferable for a website to instead
+        // of embedding tweets, to make a screen capture of the
+        // tweet, use that image in the website, wrapping it
+        // with a link to the source.
+
         // It's a Twitter URL, and no HTML code
         // For some reason oembetter has stopped working with Tweets
         // The Twitter documentation offers this.
         // See: https://developer.twitter.com/en/docs/twitter-for-websites/embedded-tweets/overview
-        const _fetch = await fetch; // Load the module
-        let twdata = await _fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
+        // const _fetch = await fetch; // Load the module
+        let twdata = await fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
         let twjson = await twdata.json();
         if (twjson.html) {
             ret.url = twjson.url;
@@ -235,6 +301,26 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         }
         // console.log(`${pluginName} fetchEmbedData fetch ${embedurl} ==> ${util.inspect(twjson)} ${util.inspect(ret)}`);
 
+        return ret;
+    }
+
+    async fetchVimeoEmbed(embedurl) {
+        let ret = {};
+        // See: https://developer.vimeo.com/api/oembed/videos
+        let vimdata = await fetch(`https://vimeo.com/api/oembed.json?url=${embedurl}`);
+        // console.log(`fetchVimeoEmbed ${embedurl}`, vimdata);
+        let vimjson = await vimdata.json();
+        // console.log(`fetchVimeoEmbed vimjson ${embedurl}`, vimjson);
+        if (vimjson.html) {
+            ret.url = path.join(vimjson.provider_url,  vimjson.uri);
+            ret.author_name = vimjson.author_name;
+            ret.author_url = vimjson.author_url;
+            ret.width = vimjson.width;
+            ret.height = vimjson.height;
+            ret.provider_name = vimjson.provider_name;
+            ret.provider_url = vimjson.provider_url;
+            ret.html = vimjson.html;
+        }
         return ret;
     }
 
@@ -303,9 +389,15 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
             throw new Error(`fetchUnfurlResource No Open Graph data for ${embedurl} ${util.inspect(data)}`);
         }
         if (!ytdata.oEmbed) {
-            throw new Error(`fetchUnfurlResource No oEmbed data for ${embedurl} ${util.inspect(data)}`);
+            if (embedurl.indexOf('twitter.com') >= 0) {
+                ytdata.oEmbed = await this.fetchTwitterEmbed(embedurl);
+            }
+            if (!ytdata.oEmbed) {
+                console.warn(`fetchUnfurlResource No oEmbed data for ${embedurl} ${util.inspect(data)}`);
+            }
         }
-        let ret = {
+        let ret = ytdata.oEmbed 
+        ? {
             ytdata:        ytdata,
             url:           ytdata.open_graph.url,
             author_name:   ytdata.oEmbed.author_name,
@@ -316,6 +408,13 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
             provider_url:  ytdata.oEmbed.provider_url,
             description:   ytdata.open_graph.description,
             html:          ytdata.oEmbed.html
+        }
+        : {
+            ytdata:        ytdata,
+            url:           ytdata.open_graph.url,
+            author_name:   ytdata.twitter_card.site,
+            author_url:    `https://www.youtube.com/${ytdata.twitter_card.site}`,
+            html:          ytdata.twitter_card.players[0]
         };
         if (ytdata.open_graph.images
          && ytdata.open_graph.images.length >= 1
@@ -351,6 +450,8 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
         } else if (attrs.href && attrs.href.indexOf('slideshare.com') >= 0) {
             // data = await this.fetchSlideShareEmbed(attrs.href);
             data = await this.fetchUnfurlResource(attrs.href);
+        } else if (attrs.href && attrs.href.indexOf('vimeo.com') >= 0) {
+            data = await this.fetchVimeoEmbed(attrs.href);
         } else if (attrs.href) {
             data = await this.fetchUnfurlResource(attrs.href);
         } else {
@@ -433,21 +534,28 @@ module.exports = class EmbeddablesPlugin extends akasha.Plugin {
             throw new Error(`doEmbedResourceContent FAIL to retrieve data for ${attrs.href} in ${attrs.metadata.document.path} mdata ${util.inspect(mdata)}`);
         }
 
-        return await akasha.partial(this.config, attrs.template, mdata);
+        const ret = await this.akasha.partial(this.config, attrs.template, mdata);
+        // console.log(`doEmbedResourceContent ${util.inspect(attrs)} ${util.inspect(mdata)}}`, ret);
+        return ret;
     }
 
 };
 
-module.exports.mahabhutaArray = function(options) {
+export function mahabhutaArray(
+            options,
+            config, // ?: Configuration,
+            akasha, // ?: any,
+            plugin  // ?: Plugin
+) {
     let ret = new mahabhuta.MahafuncArray(pluginName, options);
-    ret.addMahafunc(new EmbedResourceContent());
-    ret.addMahafunc(new EmbedYouTube());
-    ret.addMahafunc(new VideoPlayersFromVideoURLS());
-    ret.addMahafunc(new VideoThumbnailsFromVideoURLS());
+    ret.addMahafunc(new EmbedResourceContent(config, akasha, plugin));
+    ret.addMahafunc(new EmbedYouTube(config, akasha, plugin));
+    ret.addMahafunc(new VideoPlayersFromVideoURLS(config, akasha, plugin));
+    ret.addMahafunc(new VideoThumbnailsFromVideoURLS(config, akasha, plugin));
     return ret;
 };
 
-class EmbedResourceContent extends mahabhuta.CustomElement {
+class EmbedResourceContent extends CustomElement {
     get elementName() { return "embed-resource"; }
     async process($element, metadata, dirty) {
         const href = $element.attr("href");
@@ -464,7 +572,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
         // TODO capture the body text, making it available to the template
 
         dirty();
-        return this.array.options.config.plugin(pluginName)
+        return this.config.plugin(pluginName)
         .doEmbedResourceContent({
             href, template, width, _class, style,
             align, title, metadata
@@ -484,7 +592,7 @@ class EmbedResourceContent extends mahabhuta.CustomElement {
     }
 }
 
-class EmbedYouTube extends mahabhuta.CustomElement {
+class EmbedYouTube extends CustomElement {
     get elementName() { return "embed-youtube"; }
     async process($element, metadata, dirty) {
 
@@ -505,7 +613,7 @@ class EmbedYouTube extends mahabhuta.CustomElement {
         const description = $element.html() ? $element.html() : (
             $element.attr('description') ? $element.attr('description') : undefined
         );
-        return this.array.options.config.plugin(pluginName)
+        return this.config.plugin(pluginName)
         .doEmbedYouTube(code, template, _class, style, title,
                         id, autoplay, description)
 
@@ -527,7 +635,7 @@ class EmbedYouTube extends mahabhuta.CustomElement {
     }
 }
 
-class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
+class VideoPlayersFromVideoURLS extends CustomElement {
     get elementName() { return "video-players-from-videourls"; }
     async process($element, metadata, dirty) {
         let ret = "";
@@ -536,7 +644,7 @@ class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
             for (let videoData of metadata.videoUrls) {
                 // console.log(`VideoPlayersFromVideoURLS `, videoData);
                 dirty();
-                ret += await this.array.options.config.plugin(pluginName)
+                ret += await this.config.plugin(pluginName)
                 .doEmbedResourceContent({
                     href: videoData.url,
                     template: "embed-resource-framed.html.ejs",
@@ -554,7 +662,7 @@ class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
         if (metadata.youtubeUrls) {
             for (let youtubeData of metadata.youtubeUrls) {
                 dirty();
-                ret += await this.array.options.config.plugin(pluginName)
+                ret += await this.config.plugin(pluginName)
                 .doEmbedYouTube(
                         youtubeData.code, youtubeData.template,
                         youtubeData.class, youtubeData.style,
@@ -575,7 +683,7 @@ class VideoPlayersFromVideoURLS extends mahabhuta.CustomElement {
     }
 }
 
-class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
+class VideoThumbnailsFromVideoURLS extends CustomElement {
     get elementName() { return "video-thumbnail-from-videourls"; }
     async process($element, metadata, dirty) {
 
@@ -599,7 +707,7 @@ class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
             console.log(`doVideoThumbnailsFromVideoURLS got videoUrls[0].url`, videoUrls[0].url);
         } */
 
-        const mdata = await this.array.options.config.plugin(pluginName)
+        const mdata = await this.config.plugin(pluginName)
         .resource({
             href: videoUrls[0].url,
             template: template,
@@ -618,7 +726,7 @@ class VideoThumbnailsFromVideoURLS extends mahabhuta.CustomElement {
         // console.log(`VideoThumbnailsFromVideoURLS ${videoUrls[0].url} `, mdata);
 
         dirty();
-        return akasha.partial(this.array.options.config, "embed-thumbnail.html.ejs", {
+        return this.config.akasha.partial(this.config, "embed-thumbnail.html.ejs", {
             imageUrl: mdata.imageUrl,
             title: videoUrls[0].title ? videoUrls[0].title : undefined,
             width: "200",
