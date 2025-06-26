@@ -32,7 +32,7 @@ import extract from 'meta-extractor';
 import OEMBETTER from 'oembetter';
 const oembetter = OEMBETTER();
 import { unfurl } from 'unfurl.js';
-import fetch from 'node-fetch'
+import got from 'got';
 
 const __dirname = import.meta.dirname;
 
@@ -287,8 +287,19 @@ export class EmbeddablesPlugin extends akasha.Plugin {
         // The Twitter documentation offers this.
         // See: https://developer.twitter.com/en/docs/twitter-for-websites/embedded-tweets/overview
         // const _fetch = await fetch; // Load the module
-        let twdata = await fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
-        let twjson = await twdata.json();
+        
+        let res = await got.get(
+            `https://publish.twitter.com/oembed`,
+            {
+                searchParams: {
+                    url: embedurl
+                }
+            },
+            { retry: { limit: 5 }}
+        );
+        let twjson = JSON.parse(res.body);
+        // let twdata = await fetch(`https://publish.twitter.com/oembed?url=${embedurl}`);
+        // let twjson = await twdata.json();
         if (twjson.html) {
             ret.url = twjson.url;
             ret.author_name = twjson.author_name;
@@ -307,9 +318,21 @@ export class EmbeddablesPlugin extends akasha.Plugin {
     async fetchVimeoEmbed(embedurl) {
         let ret = {};
         // See: https://developer.vimeo.com/api/oembed/videos
-        let vimdata = await fetch(`https://vimeo.com/api/oembed.json?url=${embedurl}`);
-        // console.log(`fetchVimeoEmbed ${embedurl}`, vimdata);
-        let vimjson = await vimdata.json();
+
+        let res = await got.get(
+            `https://vimeo.com/api/oembed.json`,
+            {
+                searchParams: {
+                    url: embedurl
+                }
+            },
+            { retry: { limit: 5 }}
+        );
+        let vimjson = JSON.parse(res.body);
+
+        // let vimdata = await fetch(`https://vimeo.com/api/oembed.json?url=${embedurl}`);
+        // // console.log(`fetchVimeoEmbed ${embedurl}`, vimdata);
+        // let vimjson = await vimdata.json();
         // console.log(`fetchVimeoEmbed vimjson ${embedurl}`, vimjson);
         if (vimjson.html) {
             ret.url = path.join(vimjson.provider_url,  vimjson.uri);

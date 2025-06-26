@@ -37,8 +37,15 @@
   },
   "dependencies": {
     "meta-extractor": "^2.1.x",
-    "node-fetch": "^3.3.x",
     "oembetter": "^1.1.x",
     "unfurl.js": "^6.4.x"
+  },
+  "peerDependencies": {
+    "got": "^14.4.x"
+  },
+  "overrides": {
+    "rimraf@<4": "5.0.10",
+    "glob@<9": "10.4.5"
   }
+
 }
